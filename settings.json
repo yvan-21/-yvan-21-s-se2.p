@@ -1,0 +1,1 @@
+{"app_name": "Orchid Identifier", "version": "1.0.0", "max_upload_size": 16, "allowed_extensions": ["png", "jpg", "jpeg", "gif"], "model_threshold": 0.5, "auto_reload": true}

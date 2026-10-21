@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictions - Orchid Identifier</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 { color: #2c3e50; }
+        .btn-group {
+            margin-top: 20px;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #5a67d8; }
+        .btn-green { background: #27ae60; }
+        .btn-gray { background: #95a5a6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Predictions</h1>
+        <p>Use camera or upload to detect orchid health and species.</p>
+        <div class="btn-group">
+            <button type="button" class="btn" onclick="window.location.href='/camera'">📷 Camera</button>
+            <button type="button" class="btn btn-green" onclick="window.location.href='/upload'">📤 Upload</button>
+            <button type="button" class="btn btn-gray" onclick="window.location.href='/admin/dashboard'">← Back</button>
+        </div>
+    </div>
+</body>
+</html>

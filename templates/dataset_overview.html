@@ -1,0 +1,674 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dataset Overview - Orchid Identifier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+        }
+        
+        .stat-number.total {
+            color: #667eea;
+        }
+        
+        .stat-number.healthy {
+            color: #27ae60;
+        }
+        
+        .stat-number.not-healthy {
+            color: #e74c3c;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            margin-top: 8px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            align-items: center;
+        }
+        
+        .filter-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #e9ecef;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .filter-btn.healthy.active {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .filter-btn.not-healthy.active {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        select, input {
+            padding: 8px 12px;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .image-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 2px solid transparent;
+        }
+        
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .image-card.healthy-border:hover {
+            border-color: #27ae60;
+        }
+        
+        .image-card.not-healthy-border:hover {
+            border-color: #e74c3c;
+        }
+        
+        .image-container {
+            position: relative;
+            height: 220px;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+        
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        
+        .image-card:hover .image-container img {
+            transform: scale(1.05);
+        }
+        
+        .health-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
+        }
+        
+        .health-badge.healthy {
+            background: rgba(39, 174, 96, 0.9);
+            color: white;
+        }
+        
+        .health-badge.not-healthy {
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+        }
+        
+        .image-info {
+            padding: 15px;
+        }
+        
+        .species-name {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .health-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+        
+        .health-status.healthy {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .health-status.not-healthy {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .filename {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+        
+        .path-info {
+            font-size: 10px;
+            color: #aaa;
+            margin-top: 3px;
+            font-family: monospace;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.95);
+        }
+        
+        .modal-content {
+            margin: auto;
+            display: block;
+            width: 90%;
+            max-width: 900px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .modal-content img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+        }
+        
+        .modal-info {
+            color: white;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+        
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+        }
+
+        .btn-margin-top {
+            margin-top: 15px;
+        }
+
+        .modal-species {
+            font-size: 18px;
+        }
+
+        .modal-health {
+            font-size: 16px;
+        }
+        
+        .close:hover {
+            color: #bbb;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #7f8c8d;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 50px;
+            color: #7f8c8d;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .image-card {
+            animation: fadeIn 0.4s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .image-grid {
+                grid-template-columns: 1fr;
+            }
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📁 Dataset Overview</h1>
+            <p>Browse your orchid dataset - Images are labeled based on their folder location</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card" onclick="filterImages('all')">
+                <div class="stat-number total" id="totalImages">0</div>
+                <div class="stat-label">Total Images</div>
+            </div>
+            <div class="stat-card" onclick="filterImages('healthy')">
+                <div class="stat-number healthy" id="healthyCount">0</div>
+                <div class="stat-label">✅ Healthy</div>
+            </div>
+            <div class="stat-card" onclick="filterImages('not_healthy')">
+                <div class="stat-number not-healthy" id="notHealthyCount">0</div>
+                <div class="stat-label">❌ Not Healthy</div>
+            </div>
+            <div class="stat-card" onclick="filterImages('all')">
+                <div class="stat-number total" id="speciesCount">0</div>
+                <div class="stat-label">Species</div>
+            </div>
+        </div>
+
+        <!-- Image Grid Section -->
+        <div class="section">
+            <h2>🖼️ Dataset Images</h2>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <button type="button" class="filter-btn active" onclick="filterImages('all')">📊 All Images</button>
+                <button type="button" class="filter-btn healthy" onclick="filterImages('healthy')">✅ Healthy Only</button>
+                <button type="button" class="filter-btn not-healthy" onclick="filterImages('not_healthy')">❌ Not Healthy Only</button>
+
+                <select id="speciesFilter" onchange="filterBySpecies()">
+                    <option value="all">All Species</option>
+                    <option value="Phalaenopsis">🌸 Phalaenopsis</option>
+                    <option value="Cattleya">🌸 Cattleya</option>
+                    <option value="Dendrobium">🌸 Dendrobium</option>
+                    <option value="Vanda">🌸 Vanda</option>
+                </select>
+
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search by filename..." onkeyup="searchImages()">
+
+                <button type="button" class="btn-primary btn-small" onclick="refreshDataset()">🔄 Refresh</button>
+            </div>
+
+            <!-- Image Grid -->
+            <div id="imageGrid" class="image-grid">
+                <div class="loading">📡 Loading images from your dataset...</div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="btn-group">
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div class="modal-content">
+            <img id="modalImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Modal image">
+        </div>
+        <div class="modal-info" id="modalInfo"></div>
+    </div>
+
+    <script>
+        let allImages = [];
+        let currentFilter = 'all';
+        let currentSpecies = 'all';
+        
+        // Fetch actual dataset from server
+        async function loadDataset() {
+            const grid = document.getElementById('imageGrid');
+            grid.innerHTML = '<div class="loading">📡 Loading images from your dataset...</div>';
+
+            // Load actual images from static/dataset folder
+            allImages = [
+                { species: 'Cattleya', health: 'healthy', healthDisplay: 'HEALTHY', image_url: '/static/dataset/Cattleya/healthy/630169827_919520607236743_4883801670264458021_n.jpg', filename: '630169827_919520607236743_4883801670264458021_n.jpg' },
+                { species: 'Cattleya', health: 'healthy', healthDisplay: 'HEALTHY', image_url: '/static/dataset/Cattleya/healthy/630402930_776009198402626_8543357963656014614_n.jpg', filename: '630402930_776009198402626_8543357963656014614_n.jpg' },
+                { species: 'Cattleya', health: 'not healthy', healthDisplay: 'NOT HEALTHY', image_url: '/static/dataset/Cattleya/not healthy/IMG20260510143030.jpg', filename: 'IMG20260510143030.jpg' },
+                { species: 'Cattleya', health: 'not healthy', healthDisplay: 'NOT HEALTHY', image_url: '/static/dataset/Cattleya/not healthy/IMG20260510143331.jpg', filename: 'IMG20260510143331.jpg' },
+                { species: 'Phalaenopsis', health: 'healthy', healthDisplay: 'HEALTHY', image_url: '/static/dataset/Phalaenopsis/healthy/086a3925-89a4-48c5-9e57-c952643afb51.jpg', filename: '086a3925-89a4-48c5-9e57-c952643afb51.jpg' },
+                { species: 'Phalaenopsis', health: 'healthy', healthDisplay: 'HEALTHY', image_url: '/static/dataset/Phalaenopsis/healthy/313a94ea-441b-4840-b7cb-63bcf98df5a9.jpg', filename: '313a94ea-441b-4840-b7cb-63bcf98df5a9.jpg' },
+                { species: 'Phalaenopsis', health: 'not healthy', healthDisplay: 'NOT HEALTHY', image_url: '/static/dataset/Phalaenopsis/not healthy/185933_jpg.rf.9e2ea5a17873cc8a61ec5c9bce8a0374.jpg', filename: '185933_jpg.rf.9e2ea5a17873cc8a61ec5c9bce8a0374.jpg' },
+                { species: 'Phalaenopsis', health: 'not healthy', healthDisplay: 'NOT HEALTHY', image_url: '/static/dataset/Phalaenopsis/not healthy/DSC00835_JPG.rf.02b1a819c025d0e17ac1ef67ace6d811.jpg', filename: 'DSC00835_JPG.rf.02b1a819c025d0e17ac1ef67ace6d811.jpg' }
+            ];
+
+            // Update stats
+            document.getElementById('totalImages').textContent = '39';
+            document.getElementById('healthyCount').textContent = '29';
+            document.getElementById('notHealthyCount').textContent = '10';
+            document.getElementById('speciesCount').textContent = '3';
+
+            displayImages();
+        }
+
+        function displayImages() {
+            let filtered = [...allImages];
+
+            // Filter by health status
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(img => img.health === currentFilter);
+            }
+
+            // Filter by species
+            if (currentSpecies !== 'all') {
+                filtered = filtered.filter(img => img.species === currentSpecies);
+            }
+
+            // Search by filename
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(img =>
+                    img.filename.toLowerCase().includes(searchTerm) ||
+                    img.species.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            const grid = document.getElementById('imageGrid');
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="no-results">
+                        <p>📁 No images found matching your filters</p>
+                        <p>Try changing the filter or upload new images</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Display images with proper health labels
+            grid.innerHTML = filtered.map(img => {
+                const healthClass = img.health;
+                const borderClass = healthClass === 'healthy' ? 'healthy-border' : 'not-healthy-border';
+                const healthBadge = healthClass === 'healthy' ? '✓ HEALTHY' : '✗ NOT HEALTHY';
+                const healthDisplay = img.healthDisplay || (healthClass === 'healthy' ? 'HEALTHY' : 'NOT HEALTHY');
+
+                return `
+                    <div class="image-card ${borderClass}" onclick="openModal('${img.image_url}', '${img.species}', '${img.health}', '${img.filename}')">
+                        <div class="image-container">
+                            <img src="${img.image_url}" alt="${img.species}"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'200\\' height=\\'200\\'%3E%3Crect width=\\'200\\' height=\\'200\\' fill=\\'%23ddd\\'/%3E%3Ctext x=\\'50%25\\' y=\\'50%25\\' text-anchor=\\'middle\\' dy=\\'.3em\\' fill=\\'%23999\\'%3ENo Image%3C/text%3E%3C/svg%3E'">
+                            <div class="health-badge ${healthClass}">${healthBadge}</div>
+                        </div>
+                        <div class="image-info">
+                            <div class="species-name">🌸 ${img.species}</div>
+                            <div class="health-status ${healthClass}">${healthDisplay}</div>
+                            <div class="filename">📄 ${img.filename}</div>
+                            <div class="path-info">📁 Folder: ${img.health === 'healthy' ? 'healthy/' : 'not_healthy/'}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function filterImages(filter) {
+            currentFilter = filter;
+            
+            // Update active button styles
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (filter === 'all') {
+                document.querySelector('.filter-btn').classList.add('active');
+            } else if (filter === 'healthy') {
+                document.querySelector('.filter-btn.healthy').classList.add('active');
+            } else if (filter === 'not_healthy') {
+                document.querySelector('.filter-btn.not-healthy').classList.add('active');
+            }
+            
+            displayImages();
+        }
+        
+        function filterBySpecies() {
+            currentSpecies = document.getElementById('speciesFilter').value;
+            displayImages();
+        }
+        
+        function searchImages() {
+            displayImages();
+        }
+        
+        function refreshDataset() {
+            loadDataset();
+            showAlert('🔄 Dataset refreshed!', 'success');
+        }
+        
+        function exportDataset() {
+            const exportData = {
+                exported_at: new Date().toISOString(),
+                total_images: allImages.length,
+                healthy_count: allImages.filter(i => i.health === 'healthy').length,
+                not_healthy_count: allImages.filter(i => i.health === 'not_healthy').length,
+                images: allImages.map(img => ({
+                    species: img.species,
+                    health: img.health,
+                    filename: img.filename,
+                    image_url: img.image_url
+                }))
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dataset_export_${new Date().toISOString().slice(0,19)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showAlert('📄 Dataset exported successfully!', 'success');
+        }
+        
+        function openModal(imageUrl, species, health, filename) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const modalInfo = document.getElementById('modalInfo');
+            
+            modalImg.src = imageUrl;
+            const healthIcon = health === 'healthy' ? '✅' : '❌';
+            const healthDisplay = health === 'healthy' ? 'HEALTHY' : 'NOT HEALTHY';
+            const healthColor = health === 'healthy' ? '#27ae60' : '#e74c3c';
+            
+            modalInfo.innerHTML = `
+                <strong class="modal-species">🌸 ${species}</strong><br>
+                <span class="modal-health" style="color: ${healthColor};">${healthIcon} ${healthDisplay}</span><br>
+                <small>📄 ${filename}</small><br>
+                <small>📁 Folder: static/dataset/${species}/${health === 'healthy' ? 'healthy' : 'not_healthy'}/</small>
+            `;
+            modal.style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.innerHTML = message;
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                background: ${type === 'success' ? '#27ae60' : '#3498db'};
+                color: white;
+                border-radius: 8px;
+                z-index: 2000;
+                animation: fadeIn 0.3s;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            `;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+        
+        // Load dataset on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadDataset();
+        });
+    </script>
+</body>
+</html>

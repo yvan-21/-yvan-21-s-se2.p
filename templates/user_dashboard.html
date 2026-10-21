@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ app_name }} - User Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .user-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            color: #2d3748;
+            padding: 0;
+            position: fixed;
+            height: 100%;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+        }
+
+        .sidebar-header {
+            padding: 40px 25px 30px;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+            color: white;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+        }
+
+        .sidebar-nav {
+            padding: 25px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 25px;
+        }
+
+        .nav-section-title {
+            padding: 10px 25px;
+            color: #718096;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 25px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 3px solid transparent;
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .nav-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.15), transparent);
+            color: #667eea;
+            border-left-color: #667eea;
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            font-size: 1.2rem;
+            margin-right: 15px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .nav-text {
+            font-weight: 500;
+        }
+
+        .logout-section {
+            padding: 20px 25px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            margin-top: auto;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #e53e3e, #c53030);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(229, 62, 62, 0.3);
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(229, 62, 62, 0.4);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 18px 14px calc(96px + env(safe-area-inset-bottom));
+            }
+
+            .content-header {
+                margin-bottom: 20px;
+            }
+
+            .content-header h1 {
+                font-size: clamp(1.5rem, 7vw, 2rem);
+                letter-spacing: -0.5px;
+            }
+
+            .content-header p {
+                font-size: 0.95rem;
+                line-height: 1.45;
+            }
+
+            .card {
+                padding: 20px 16px;
+                border-radius: 16px;
+                margin-bottom: 16px;
+            }
+
+            .card h2 {
+                font-size: 1.2rem;
+                margin-bottom: 18px;
+            }
+
+            .welcome-card {
+                padding: 28px 20px;
+                margin-bottom: 20px;
+            }
+
+            .welcome-card h2 {
+                font-size: 1.7rem;
+            }
+
+            .welcome-card p {
+                font-size: 1rem;
+                line-height: 1.5;
+            }
+
+            .action-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+
+            .action-card {
+                padding: 20px 12px;
+                border-radius: 16px;
+            }
+
+            .action-icon {
+                font-size: 2.3rem;
+                margin-bottom: 10px;
+            }
+
+            .action-title {
+                font-size: 1rem;
+                line-height: 1.3;
+            }
+
+            .action-desc {
+                font-size: 0.82rem;
+                line-height: 1.4;
+            }
+
+            .camera-preview {
+                height: min(55vh, 380px);
+                min-height: 220px;
+            }
+
+            .camera-controls {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                width: 100%;
+            }
+
+            .camera-controls .btn {
+                min-height: 48px;
+                padding: 10px;
+                line-height: 1.25;
+            }
+
+            .upload-area {
+                padding: 26px 16px;
+                line-height: 1.5;
+            }
+
+            .result-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .result-item {
+                padding: 16px;
+            }
+
+            .result-value {
+                font-size: 1.25rem;
+                overflow-wrap: anywhere;
+            }
+
+            .result-recommendation {
+                padding: 15px 13px;
+                font-size: 0.95rem;
+                line-height: 1.55;
+            }
+
+            .guidance-actions {
+                gap: 14px;
+                padding-left: 1.2rem;
+            }
+
+            .captured-image {
+                width: 100%;
+                max-width: 100%;
+                max-height: 55vh;
+                object-fit: contain;
+            }
+
+            .mobile-nav {
+                padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(12px);
+            }
+
+            .mobile-nav-items {
+                gap: 4px;
+            }
+
+            .mobile-nav-item {
+                flex: 1;
+                min-width: 0;
+                min-height: 58px;
+                padding: 6px 3px;
+                border: 0;
+                border-radius: 12px;
+                background: transparent;
+                font: inherit;
+                color: #566174;
+                font-size: 0.75rem;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+            .mobile-nav-item.active {
+                color: #4f46e5;
+                background: #eef0ff;
+            }
+
+            .mobile-nav-item:focus-visible {
+                outline: 3px solid #667eea;
+                outline-offset: 2px;
+            }
+
+            .mobile-nav-icon {
+                font-size: 1.35rem;
+            }
+        }
+
+        .content-header {
+            margin-bottom: 35px;
+        }
+
+        .content-header h1 {
+            color: #2d3748;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .content-header p {
+            color: #718096;
+            font-size: 1rem;
+        }
+
+        /* Sections */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 25px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .card h2 {
+            color: #2d3748;
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        /* Home Section */
+        .welcome-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 50px;
+            border-radius: 20px;
+            margin-bottom: 35px;
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+        }
+
+        .welcome-card h2 {
+            color: white;
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-card p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .action-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 35px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .action-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .action-title {
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .action-desc {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        /* Camera Section */
+        .camera-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .camera-preview {
+            width: 100%;
+            max-width: 640px;
+            height: 480px;
+            background: #000;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .upload-area {
+            border: 3px dashed #e0e0e0;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        /* Result Section */
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .result-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .result-value {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .result-recommendation {
+            padding: 16px;
+            border-radius: 12px;
+            background: #f8f9ff;
+            color: #374151;
+            font-size: 0.98rem;
+            line-height: 1.65;
+            overflow-wrap: anywhere;
+        }
+
+        .result-warning {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-left: 4px solid #d97706;
+            border-radius: 8px;
+            background: #fffbeb;
+            color: #78350f;
+            line-height: 1.5;
+        }
+
+        .guidance-summary,
+        .guidance-actions {
+            margin: 0;
+            padding-left: 1.25rem;
+        }
+
+        .guidance-summary {
+            display: grid;
+            gap: 8px;
+        }
+
+        .guidance-summary li::marker,
+        .guidance-actions li::marker {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .guidance-actions-title {
+            margin: 18px 0 8px;
+            color: #2d3748;
+            font-weight: 700;
+        }
+
+        .guidance-actions {
+            display: grid;
+            gap: 12px;
+        }
+
+        .guidance-actions li {
+            padding-left: 4px;
+        }
+
+        .captured-image {
+            max-width: 300px;
+            border-radius: 10px;
+            margin: 20px auto;
+            display: block;
+        }
+
+        /* Mobile Navigation */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 10px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .mobile-nav-items {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .mobile-nav-item {
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .mobile-nav-item.active {
+            color: #667eea;
+        }
+
+        .mobile-nav-icon {
+            font-size: 1.5rem;
+            margin-bottom: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-nav {
+                display: block;
+            }
+            .main-content {
+                padding-bottom: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="user-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>🌸 {{ app_name }}</h2>
+                <p>User Dashboard</p>
+            </div>
+
+            <div class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">🏠 Dashboard</div>
+                    <div class="nav-item active" data-section="home" onclick="showSection('home')">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-text">Home</span>
+                    </div>
+                    <div class="nav-item" data-section="scan" onclick="showSection('scan')">
+                        <span class="nav-icon">🔬</span>
+                        <span class="nav-text">Scan Orchid Leaf</span>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">📷 Real-Time Detection</div>
+                    <div class="nav-item" data-section="camera" onclick="showSection('camera')">
+                        <span class="nav-icon">📷</span>
+                        <span class="nav-text">Open Camera</span>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">📊 Results</div>
+                    <div class="nav-item" data-section="result" onclick="showSection('result')">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">Result Page</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="logout-section">
+                <a href="/logout">
+                    <button class="logout-btn">Logout</button>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Home Section -->
+            <div id="home" class="section active">
+                <div class="content-header">
+                    <h1>Welcome to Orchid Identifier</h1>
+                    <p>Identify orchid species and health status using AI</p>
+                </div>
+
+                <div class="welcome-card">
+                    <h2>🌸 Get Started</h2>
+                    <p>Choose an option below to begin identifying orchids</p>
+                </div>
+
+                <div class="action-grid">
+                    <div class="action-card" onclick="showSection('scan')">
+                        <div class="action-icon">🔬</div>
+                        <div class="action-title">Scan Orchid Leaf</div>
+                        <div class="action-desc">Upload an image for analysis</div>
+                    </div>
+
+                    <div class="action-card" onclick="showSection('camera')">
+                        <div class="action-icon">📷</div>
+                        <div class="action-title">Open Camera</div>
+                        <div class="action-desc">Use real-time detection</div>
+                    </div>
+
+                    <div class="action-card" onclick="showSection('result')">
+                        <div class="action-icon">📊</div>
+                        <div class="action-title">View Results</div>
+                        <div class="action-desc">Check previous analyses</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scan Section -->
+            <div id="scan" class="section">
+                <div class="content-header">
+                    <h1>Scan Orchid Leaf</h1>
+                    <p>Upload an orchid image for analysis</p>
+                </div>
+
+                <div class="card">
+                    <h2>Upload Image</h2>
+                    <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                        <div class="action-icon">📤</div>
+                        <p>Click to upload or drag and drop an orchid image</p>
+                    </div>
+                    <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
+                    
+                    <img id="preview-img" class="captured-image" style="display: none;" alt="Preview">
+                    
+                    <div class="camera-controls" style="margin-top: 20px;">
+                        <button class="btn btn-primary" onclick="analyzeImage()">Analyze Leaf</button>
+                        <button class="btn btn-secondary" onclick="resetScan()">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Camera Section -->
+            <div id="camera" class="section">
+                <div class="content-header">
+                    <h1>Real-Time Detection</h1>
+                    <p>Use your camera for live orchid identification</p>
+                </div>
+
+                <div class="card">
+                    <div class="camera-container">
+                        <div class="camera-preview" id="camera-preview">
+                            <div id="camera-placeholder">
+                                <div class="action-icon">📷</div>
+                                <p>Camera not active</p>
+                            </div>
+                            <video id="camera-video" style="display: none;" autoplay playsinline></video>
+                        </div>
+
+                        <div class="camera-controls">
+                            <button class="btn btn-primary" onclick="openCamera()">Open Camera</button>
+                            <button class="btn btn-secondary" onclick="switchCamera()">Switch Camera</button>
+                            <button class="btn btn-success" onclick="captureImage()">Capture Image</button>
+                            <button class="btn btn-secondary" onclick="document.getElementById('file-input-camera').click()">Upload Image (optional)</button>
+                            <button class="btn btn-primary" onclick="analyzeCameraImage()">Analyze Leaf</button>
+                            <button class="btn btn-danger" onclick="resetCamera()">Reset</button>
+                        </div>
+                        <input type="file" id="file-input-camera" accept="image/*" style="display: none;" onchange="handleCameraFileUpload(event)">
+                    </div>
+                </div>
+
+                <img id="captured-img" class="captured-image" style="display: none;" alt="Captured">
+            </div>
+
+            <!-- Result Section -->
+            <div id="result" class="section">
+                <div class="content-header">
+                    <h1>Analysis Result</h1>
+                    <p>View the identification results</p>
+                </div>
+
+                <div class="card">
+                    <h2>🎯 Detection Results</h2>
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <div class="result-label">Species</div>
+                            <div class="result-value" id="result-species">--</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">Health Status</div>
+                            <div class="result-value" id="result-health">--</div>
+                        </div>
+                    </div>
+                    <div class="result-warning" id="result-warning" role="status" hidden></div>
+                </div>
+
+                <div class="card" id="result-recommendation-card" style="display: none;">
+                    <h2>🔎 Visual Screening &amp; Care Guidance</h2>
+                    <div class="result-recommendation" id="result-recommendation"></div>
+                </div>
+
+                <div class="card" id="result-image-card" style="display: none;">
+                    <h2>Analyzed Image</h2>
+                    <img id="result-display-img" class="captured-image" alt="Analyzed Image">
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation -->
+        <div class="mobile-nav">
+            <div class="mobile-nav-items">
+                <button type="button" class="mobile-nav-item active" data-section="home" aria-label="Home" aria-current="page" onclick="showSection('home')">
+                    <div class="mobile-nav-icon">🏠</div>
+                    <div>Home</div>
+                </button>
+                <button type="button" class="mobile-nav-item" data-section="scan" aria-label="Scan an orchid leaf" onclick="showSection('scan')">
+                    <div class="mobile-nav-icon">🔬</div>
+                    <div>Scan</div>
+                </button>
+                <button type="button" class="mobile-nav-item" data-section="camera" aria-label="Open camera" onclick="showSection('camera')">
+                    <div class="mobile-nav-icon">📷</div>
+                    <div>Camera</div>
+                </button>
+                <button type="button" class="mobile-nav-item" data-section="result" aria-label="View analysis results" onclick="showSection('result')">
+                    <div class="mobile-nav-icon">📊</div>
+                    <div>Result</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStream = null;
+        let capturedImageData = null;
+        let useFrontCamera = false;
+
+        function showSection(sectionId) {
+            const selectedSection = document.getElementById(sectionId);
+            if (!selectedSection) return;
+
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Remove active class from all nav items (desktop)
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Remove active class from all mobile nav items
+            document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+
+            document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(item => {
+                const isActive = item.dataset.section === sectionId;
+                item.classList.toggle('active', isActive);
+                if (item.classList.contains('mobile-nav-item')) {
+                    if (isActive) item.setAttribute('aria-current', 'page');
+                    else item.removeAttribute('aria-current');
+                }
+            });
+
+            // Stop camera if leaving camera section
+            if (sectionId !== 'camera' && currentStream) {
+                stopCamera();
+            }
+        }
+
+        function displayAnalysisResult(data, imageData) {
+            document.getElementById('result-species').textContent =
+                data.success ? (data.species || 'Unknown') : 'Analysis failed';
+            document.getElementById('result-health').textContent =
+                data.success
+                    ? (data.health_status || 'Unknown').replace(/_/g, ' ')
+                    : (data.error || 'Please try again.');
+            const warning = document.getElementById('result-warning');
+            warning.textContent = data.warning || '';
+            warning.hidden = !data.warning;
+            const recommendationCard = document.getElementById('result-recommendation-card');
+            const recommendation = document.getElementById('result-recommendation');
+            if (data.success && data.recommendation) {
+                renderCareGuidance(recommendation, data.recommendation);
+                recommendationCard.style.display = 'block';
+            } else {
+                recommendation.replaceChildren();
+                recommendationCard.style.display = 'none';
+            }
+
+            document.getElementById('result-display-img').src = imageData;
+            document.getElementById('result-image-card').style.display = 'block';
+            showSection('result');
+        }
+
+        function renderCareGuidance(container, guidanceText) {
+            const summary = document.createElement('ul');
+            summary.className = 'guidance-summary';
+            const actions = document.createElement('ul');
+            actions.className = 'guidance-actions';
+            let actionsTitle = null;
+            let inActions = false;
+
+            guidanceText.split(/\r?\n/).forEach(line => {
+                const text = line.trim();
+                if (!text) return;
+                if (/^(?:[•*-]\s*)?Dataset-trained model scores:/i.test(text)) {
+                    return;
+                }
+                if (
+                    text === 'What to do' ||
+                    text === 'Care focus:' ||
+                    text.startsWith('Care focus:')
+                ) {
+                    inActions = true;
+                    actionsTitle = document.createElement('div');
+                    actionsTitle.className = 'guidance-actions-title';
+                    actionsTitle.textContent = 'What to do';
+                    const inlineAction = text.startsWith('Care focus:')
+                        ? text.slice('Care focus:'.length).trim()
+                        : '';
+                    if (inlineAction) appendGuidanceItem(actions, inlineAction);
+                    return;
+                }
+
+                if (inActions) {
+                    appendGuidanceItem(actions, text.replace(/^\d+\.\s*/, ''));
+                    return;
+                }
+
+                const item = document.createElement('li');
+                const separator = text.indexOf(':');
+                if (separator > 0) {
+                    const label = document.createElement('strong');
+                    label.textContent = `${text.slice(0, separator)}: `;
+                    item.append(label, document.createTextNode(text.slice(separator + 1).trim()));
+                } else {
+                    item.textContent = text;
+                }
+                summary.appendChild(item);
+            });
+
+            container.replaceChildren();
+            if (summary.children.length) container.appendChild(summary);
+            if (actions.children.length && actionsTitle) {
+                container.append(actionsTitle, actions);
+            }
+        }
+
+        function appendGuidanceItem(list, text) {
+            const item = document.createElement('li');
+            item.textContent = text;
+            list.appendChild(item);
+        }
+
+        function displayAnalysisError(error, imageData) {
+            displayAnalysisResult({
+                success: false,
+                error: error.message || 'Analysis failed. Please try again.'
+            }, imageData);
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const preview = document.getElementById('preview-img');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                capturedImageData = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function analyzeImage() {
+            if (!capturedImageData) {
+                alert('Please upload an image first');
+                return;
+            }
+
+            try {
+                const response = await fetch(capturedImageData);
+                const blob = await response.blob();
+                const formData = new FormData();
+                formData.append('file', blob, 'image.jpg');
+
+                const apiResponse = await fetch('/api/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await apiResponse.json();
+
+                displayAnalysisResult(data, capturedImageData);
+            } catch (error) {
+                displayAnalysisError(error, capturedImageData);
+            }
+        }
+
+        function resetScan() {
+            document.getElementById('preview-img').style.display = 'none';
+            document.getElementById('preview-img').src = '';
+            capturedImageData = null;
+            document.getElementById('file-input').value = '';
+        }
+
+        async function openCamera() {
+            try {
+                const video = document.getElementById('camera-video');
+                const placeholder = document.getElementById('camera-placeholder');
+
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    alert('Camera access requires HTTPS. Please use the "Upload Image" option instead.');
+                    return;
+                }
+
+                // Request camera based on current setting
+                const facingMode = useFrontCamera ? 'user' : 'environment';
+                currentStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: facingMode
+                    }
+                });
+                video.srcObject = currentStream;
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+            } catch (error) {
+                alert('Camera access requires HTTPS. Please use the "Upload Image" option instead.');
+            }
+        }
+
+        async function switchCamera() {
+            if (currentStream) {
+                stopCamera();
+            }
+            useFrontCamera = !useFrontCamera;
+            await openCamera();
+        }
+
+        function captureImage() {
+            if (!currentStream) {
+                alert('Please open camera first');
+                return;
+            }
+
+            const video = document.getElementById('camera-video');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            capturedImageData = canvas.toDataURL('image/jpeg');
+            const capturedImg = document.getElementById('captured-img');
+            capturedImg.src = capturedImageData;
+            capturedImg.style.display = 'block';
+        }
+
+        function handleCameraFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                capturedImageData = e.target.result;
+                const capturedImg = document.getElementById('captured-img');
+                capturedImg.src = capturedImageData;
+                capturedImg.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function analyzeCameraImage() {
+            if (!capturedImageData) {
+                alert('Please capture or upload an image first');
+                return;
+            }
+
+            try {
+                const response = await fetch(capturedImageData);
+                const blob = await response.blob();
+                const formData = new FormData();
+                formData.append('file', blob, 'image.jpg');
+
+                const apiResponse = await fetch('/api/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await apiResponse.json();
+
+                displayAnalysisResult(data, capturedImageData);
+            } catch (error) {
+                displayAnalysisError(error, capturedImageData);
+            }
+        }
+
+        function resetCamera() {
+            stopCamera();
+            document.getElementById('captured-img').style.display = 'none';
+            document.getElementById('captured-img').src = '';
+            capturedImageData = null;
+            document.getElementById('file-input-camera').value = '';
+        }
+
+        function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+                document.getElementById('camera-video').style.display = 'none';
+                document.getElementById('camera-placeholder').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

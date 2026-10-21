@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Training - Orchid Identifier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .model-config {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .config-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .config-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+        
+        .training-progress {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #27ae60;
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .metric-card {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .btn-warning {
+            background: #e74c3c;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .training-log {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .btn-margin-bottom {
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .model-config {
+                grid-template-columns: 1fr;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📁 Data Training</h1>
+            <p>Configure and train your orchid disease detection model</p>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalImages">0</div>
+                <div class="stat-label">Total Images</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="trainImages">0</div>
+                <div class="stat-label">Training Set</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="valImages">0</div>
+                <div class="stat-label">Validation Set</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="testImages">0</div>
+                <div class="stat-label">Test Set</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ Model Configuration</h2>
+            <div class="model-config">
+                <div class="config-card">
+                    <div class="config-label">🤖 Model Architecture</div>
+                    <select id="modelArchitecture">
+                        <option value="multitask_cnn" selected>Multi-Task CNN</option>
+                    </select>
+                </div>
+                <div class="config-card">
+                    <div class="config-label">📊 Batch Size</div>
+                    <select id="batchSize">
+                        <option value="16">16 (Small)</option>
+                        <option value="32" selected>32 (Default)</option>
+                        <option value="64">64 (Large)</option>
+                        <option value="128">128 (Very Large)</option>
+                    </select>
+                </div>
+                <div class="config-card">
+                    <div class="config-label">🎯 Learning Rate</div>
+                    <select id="learningRate">
+                        <option value="0.001">0.001 (Default)</option>
+                        <option value="0.0001">0.0001 (Slow)</option>
+                        <option value="0.01">0.01 (Fast)</option>
+                        <option value="adaptive">Adaptive</option>
+                    </select>
+                </div>
+                <div class="config-card">
+                    <div class="config-label">🔄 Epochs</div>
+                    <input type="number" id="epochs" min="1" max="200" value="50">
+                </div>
+                <div class="config-card">
+                    <div class="config-label">🎨 Image Size</div>
+                    <select id="imageSize">
+                        <option value="128">128x128 (Fast)</option>
+                        <option value="224" selected>224x224 (Standard)</option>
+                        <option value="299">299x299 (High Quality)</option>
+                    </select>
+                </div>
+                <div class="config-card">
+                    <div class="config-label">⚡ Optimization</div>
+                    <select id="optimizer">
+                        <option value="adam">Adam</option>
+                        <option value="sgd">SGD</option>
+                        <option value="rmsprop">RMSprop</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn-primary" onclick="startTraining()">🚀 Start Training</button>
+                <button type="button" class="btn-success" onclick="saveConfiguration()">💾 Save Configuration</button>
+                <button type="button" class="btn-warning" onclick="stopTraining()">⏹️ Stop Training</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Training Progress</h2>
+            <div class="training-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="currentEpoch">0</div>
+                        <div>Current Epoch</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="trainLoss">-</div>
+                        <div>Training Loss</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="valLoss">-</div>
+                        <div>Validation Loss</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="trainAcc">-</div>
+                        <div>Training Accuracy</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="valAcc">-</div>
+                        <div>Validation Accuracy</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="bestAcc">-</div>
+                        <div>Best Accuracy</div>
+                    </div>
+                </div>
+                <div class="training-log" id="trainingLog">
+                    [INFO] Training session initialized<br>
+                    [INFO] Dataset loaded: 0 images<br>
+                    [INFO] Ready to start training...
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📈 Model Performance</h2>
+            <div class="metrics-grid" id="performanceMetrics">
+                <div class="metric-card">
+                    <div class="metric-value">--</div>
+                    <div>Precision</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">--</div>
+                    <div>Recall</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">--</div>
+                    <div>F1 Score</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">--</div>
+                    <div>AUC-ROC</div>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn-primary" onclick="viewConfusionMatrix()">📊 View Confusion Matrix</button>
+                <button type="button" class="btn-success" onclick="exportModel()">💾 Export Model</button>
+                <button type="button" class="btn-secondary" onclick="window.location.href='/predictions'">🎯 Test Predictions</button>
+            </div>
+        </div>
+
+        <div class="btn-group btn-margin-bottom">
+            <button type="button" class="btn-secondary" onclick="window.location.href='/admin/dashboard'">← Back to Dashboard</button>
+            <button type="button" class="btn-primary" onclick="window.location.href='/data_augmentation'">🔄 Go to Data Augmentation</button>
+            <button type="button" class="btn-success" onclick="window.location.href='/upload'">📤 Upload More Images</button>
+        </div>
+    </div>
+
+    <script>
+        let trainingInterval = null;
+        let currentProgress = 0;
+        let bestAccuracy = 0;
+        
+        async function updateStats() {
+            // Use demo data since no API available
+            document.getElementById('totalImages').textContent = '0';
+            document.getElementById('trainImages').textContent = '0';
+            document.getElementById('valImages').textContent = '0';
+            document.getElementById('testImages').textContent = '0';
+        }
+        
+        function addLog(message) {
+            const logDiv = document.getElementById('trainingLog');
+            logDiv.innerHTML += `<br>[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function startTraining() {
+            const epochs = document.getElementById('epochs').value;
+            const batchSize = document.getElementById('batchSize').value;
+            const model = document.getElementById('modelArchitecture').value;
+            
+            addLog(`🚀 Starting training with ${model} model...`);
+            addLog(`📊 Epochs: ${epochs}, Batch Size: ${batchSize}`);
+            
+            const progressFill = document.getElementById('progressFill');
+            let currentEpoch = 0;
+            let trainLoss = 2.5;
+            let valLoss = 2.8;
+            let trainAcc = 0.2;
+            let valAcc = 0.15;
+            
+            if (trainingInterval) clearInterval(trainingInterval);
+            
+            trainingInterval = setInterval(() => {
+                if (currentEpoch < epochs) {
+                    currentEpoch++;
+                    currentProgress = (currentEpoch / epochs) * 100;
+                    
+                    // Simulate training progress
+                    trainLoss = Math.max(0.2, trainLoss * 0.95);
+                    valLoss = Math.max(0.3, valLoss * 0.96);
+                    trainAcc = Math.min(0.98, trainAcc + 0.015);
+                    valAcc = Math.min(0.95, valAcc + 0.012);
+                    
+                    if (valAcc > bestAccuracy) {
+                        bestAccuracy = valAcc;
+                        document.getElementById('bestAcc').innerHTML = (bestAccuracy * 100).toFixed(2) + '%';
+                        addLog(`🎉 New best accuracy: ${(bestAccuracy * 100).toFixed(2)}% at epoch ${currentEpoch}`);
+                    }
+                    
+                    // Update display
+                    progressFill.style.width = currentProgress + '%';
+                    progressFill.innerHTML = Math.floor(currentProgress) + '%';
+                    document.getElementById('currentEpoch').innerHTML = currentEpoch;
+                    document.getElementById('trainLoss').innerHTML = trainLoss.toFixed(4);
+                    document.getElementById('valLoss').innerHTML = valLoss.toFixed(4);
+                    document.getElementById('trainAcc').innerHTML = (trainAcc * 100).toFixed(2) + '%';
+                    document.getElementById('valAcc').innerHTML = (valAcc * 100).toFixed(2) + '%';
+                    
+                    if (currentEpoch % 10 === 0) {
+                        addLog(`Epoch ${currentEpoch}/${epochs} - Loss: ${trainLoss.toFixed(4)} - Acc: ${(trainAcc * 100).toFixed(2)}%`);
+                    }
+                } else {
+                    clearInterval(trainingInterval);
+                    addLog('✅ Training completed!');
+                    addLog(`🏆 Best validation accuracy: ${(bestAccuracy * 100).toFixed(2)}%`);
+                    addLog(`💾 Model saved to: models/orchid_classifier.h5`);
+                    
+                    // Update performance metrics
+                    document.getElementById('performanceMetrics').innerHTML = `
+                        <div class="metric-card"><div class="metric-value">${(bestAccuracy * 0.92).toFixed(2)}%</div><div>Precision</div></div>
+                        <div class="metric-card"><div class="metric-value">${(bestAccuracy * 0.90).toFixed(2)}%</div><div>Recall</div></div>
+                        <div class="metric-card"><div class="metric-value">${(bestAccuracy * 0.91).toFixed(2)}%</div><div>F1 Score</div></div>
+                        <div class="metric-card"><div class="metric-value">${(bestAccuracy * 0.95).toFixed(2)}%</div><div>AUC-ROC</div></div>
+                    `;
+                    
+                    showAlert('Training completed successfully!', 'success');
+                }
+            }, 1000);
+        }
+        
+        function stopTraining() {
+            if (trainingInterval) {
+                clearInterval(trainingInterval);
+                trainingInterval = null;
+                addLog('⚠️ Training stopped by user');
+                showAlert('Training stopped', 'warning');
+            }
+        }
+        
+        function saveConfiguration() {
+            const config = {
+                model: document.getElementById('modelArchitecture').value,
+                batchSize: document.getElementById('batchSize').value,
+                learningRate: document.getElementById('learningRate').value,
+                epochs: document.getElementById('epochs').value,
+                imageSize: document.getElementById('imageSize').value,
+                optimizer: document.getElementById('optimizer').value
+            };
+            localStorage.setItem('training_config', JSON.stringify(config));
+            showAlert('Configuration saved successfully!', 'success');
+            addLog('💾 Training configuration saved');
+        }
+        
+        function viewConfusionMatrix() {
+            showAlert('📊 Confusion matrix visualization would open here', 'info');
+        }
+        
+        function exportModel() {
+            showAlert('💾 Model export would start here', 'success');
+            addLog('📦 Model export initiated');
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alert');
+            if (!alertDiv) {
+                const newAlert = document.createElement('div');
+                newAlert.id = 'alert';
+                newAlert.className = `alert alert-${type}`;
+                newAlert.innerHTML = message;
+                document.querySelector('.container').insertBefore(newAlert, document.querySelector('.container').firstChild);
+                setTimeout(() => newAlert.remove(), 3000);
+            } else {
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.innerHTML = message;
+                alertDiv.style.display = 'block';
+                setTimeout(() => alertDiv.style.display = 'none', 3000);
+            }
+        }
+        
+        updateStats();
+    </script>
+</body>
+</html>

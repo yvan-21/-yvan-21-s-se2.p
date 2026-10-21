@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ app_name }} - Camera</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #43a047, #2e7d32);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 30px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            margin-right: 15px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        h1 {
+            color: #2e7d32;
+            font-size: 1.5rem;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 360px) {
+            .camera-container {
+                height: 250px;
+            }
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .capture-btn {
+            width: 100%;
+            padding: 15px;
+            background: #43a047;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .capture-btn:active {
+            background: #2e7d32;
+        }
+
+        .capture-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #c62828;
+            text-align: center;
+            margin-top: 15px;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 15px;
+            display: none;
+        }
+
+        .result-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .result-center {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .result-emoji {
+            font-size: 2.5rem;
+        }
+
+        .result-species {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        .health-badge {
+            margin: 15px 0;
+        }
+
+        .health-badge span {
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+
+        .warning-box {
+            margin: 12px 0;
+            padding: 12px;
+            border-left: 4px solid #d97706;
+            border-radius: 8px;
+            background: #fffbeb;
+            color: #78350f;
+            line-height: 1.5;
+        }
+
+        .recommendation-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            white-space: pre-line;
+        }
+
+        .retake-btn {
+            width: 100%;
+            padding: 15px;
+            background: #43a047;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .retake-btn:active {
+            background: #2e7d32;
+        }
+
+        @media (max-width: 360px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button type="button" class="back-btn" onclick="goBack()">←</button>
+            <h1>Camera</h1>
+        </div>
+
+        <div class="camera-container">
+            <video id="video" playsinline></video>
+        </div>
+
+        <button type="button" class="capture-btn" id="capture-btn" onclick="captureImage()">📸 Capture Photo</button>
+
+        <div class="error-message" id="error-message"></div>
+        <div class="result-box" id="result-box"></div>
+    </div>
+
+    <script src="/static/js/image_analysis.js?v=2"></script>
+    <script>
+        const video = document.getElementById('video');
+        const captureBtn = document.getElementById('capture-btn');
+        const errorMessage = document.getElementById('error-message');
+        const resultBox = document.getElementById('result-box');
+
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                video.srcObject = stream;
+                captureBtn.disabled = false;
+            } catch (err) {
+                errorMessage.textContent = 'Error accessing camera: ' + err.message;
+                errorMessage.style.display = 'block';
+                captureBtn.disabled = true;
+            }
+        }
+
+        function captureImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+
+            canvas.toBlob(async blob => {
+                const img = new Image();
+                img.onload = async function() {
+                    try {
+                        const result = await orchidAnalyzer.analyzeImage(img);
+                        errorMessage.style.display = 'none';
+                        displayResult(result);
+                    } catch (error) {
+                        errorMessage.textContent = 'Error analyzing image: ' + error.message;
+                        errorMessage.style.display = 'block';
+                    }
+                };
+                img.onerror = function() {
+                    errorMessage.textContent = 'Error loading captured image for analysis';
+                    errorMessage.style.display = 'block';
+                };
+                img.src = URL.createObjectURL(blob);
+            }, 'image/jpeg');
+        }
+
+        function displayResult(data) {
+            const healthStatus = (data.health_status || 'unknown').replace('_', ' ').toUpperCase();
+            const healthEmoji = data.health_status === 'healthy' ? '✅' :
+                data.health_status === 'not_healthy' ? '⚠️' : '❔';
+            const healthColor = data.health_status === 'healthy' ? '#2e7d32' :
+                data.health_status === 'not_healthy' ? '#c62828' : '#6b7280';
+            const healthBackground = data.health_status === 'healthy' ? '#e8f5e9' :
+                data.health_status === 'not_healthy' ? '#ffebee' : '#f3f4f6';
+            
+            resultBox.innerHTML = `
+                <div class="result-title">Analysis Result</div>
+                <div class="result-center">
+                    <div class="result-emoji">🌸</div>
+                    <div class="result-species">${data.species || 'Unknown / uncertain'}</div>
+                </div>
+                
+                <div class="health-badge">
+                    <span style="background: ${healthBackground}; color: ${healthColor};">
+                        ${healthEmoji} ${healthStatus}
+                    </span>
+                </div>
+                ${data.warning ? `<div class="warning-box">${data.warning}</div>` : ''}
+                
+                <div class="recommendation-box">
+                    <strong>🔎 Why this result & Care Guidance:</strong><br>
+                    ${data.recommendation}
+                </div>
+                
+                <button type="button" class="retake-btn" onclick="window.location.reload()">
+                    📸 Take Another Photo
+                </button>
+            `;
+            
+            resultBox.style.display = 'block';
+            captureBtn.style.display = 'none';
+            video.style.display = 'none';
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        initCamera();
+    </script>
+</body>
+</html>

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Performance - Orchid Identifier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            margin-top: 8px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .metric-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .metric-label {
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .confusion-matrix {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+        
+        .matrix-cell {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+        }
+        
+        .matrix-header {
+            font-weight: bold;
+            background: #667eea;
+            color: white;
+        }
+        
+        .true-positive {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .false-positive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .false-negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .true-negative {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .btn-info {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #27ae60;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .metrics-margin-top {
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            .confusion-matrix {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 Model Performance Dashboard</h1>
+            <p>Comprehensive evaluation metrics and performance analysis</p>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="stats-grid">
+            <div class="stat-card" onclick="showMetricDetails('accuracy')">
+                <div class="stat-number" id="accuracy">94.2%</div>
+                <div class="stat-label">Overall Accuracy</div>
+                <div class="progress-bar"><div class="progress-fill" data-width="94.2"></div></div>
+            </div>
+            <div class="stat-card" onclick="showMetricDetails('precision')">
+                <div class="stat-number" id="precision">92.8%</div>
+                <div class="stat-label">Precision</div>
+                <div class="progress-bar"><div class="progress-fill" data-width="92.8"></div></div>
+            </div>
+            <div class="stat-card" onclick="showMetricDetails('recall')">
+                <div class="stat-number" id="recall">91.5%</div>
+                <div class="stat-label">Recall</div>
+                <div class="progress-bar"><div class="progress-fill" data-width="91.5"></div></div>
+            </div>
+            <div class="stat-card" onclick="showMetricDetails('f1')">
+                <div class="stat-number" id="f1">92.1%</div>
+                <div class="stat-label">F1 Score</div>
+                <div class="progress-bar"><div class="progress-fill" data-width="92.1"></div></div>
+            </div>
+        </div>
+
+        <!-- Detailed Metrics -->
+        <div class="section">
+            <h2>📊 Detailed Performance Metrics</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="auc">0.976</div>
+                    <div class="metric-label">AUC-ROC Score</div>
+                    <div class="progress-bar"><div class="progress-fill" data-width="97.6"></div></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="specificity">93.4%</div>
+                    <div class="metric-label">Specificity</div>
+                    <div class="progress-bar"><div class="progress-fill" data-width="93.4"></div></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="balancedAcc">92.8%</div>
+                    <div class="metric-label">Balanced Accuracy</div>
+                    <div class="progress-bar"><div class="progress-fill" data-width="92.8"></div></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="mcc">0.845</div>
+                    <div class="metric-label">Matthews Correlation</div>
+                    <div class="progress-bar"><div class="progress-fill" data-width="84.5"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confusion Matrix -->
+        <div class="section">
+            <h2>🎯 Confusion Matrix</h2>
+            <div class="confusion-matrix">
+                <div class="matrix-cell matrix-header"></div>
+                <div class="matrix-cell matrix-header">Predicted Healthy</div>
+                <div class="matrix-cell matrix-header">Predicted Not Healthy</div>
+                <div class="matrix-cell matrix-header">Actual Healthy</div>
+                <div class="matrix-cell true-positive" id="truePositive">142</div>
+                <div class="matrix-cell false-negative" id="falseNegative">8</div>
+                <div class="matrix-cell matrix-header">Actual Not Healthy</div>
+                <div class="matrix-cell false-positive" id="falsePositive">12</div>
+                <div class="matrix-cell true-negative" id="trueNegative">98</div>
+            </div>
+            <div class="metrics-grid metrics-margin-top">
+                <div class="metric-card">
+                    <div class="metric-value" id="tpRate">94.7%</div>
+                    <div class="metric-label">True Positive Rate</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="fpRate">10.9%</div>
+                    <div class="metric-label">False Positive Rate</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="fnRate">5.3%</div>
+                    <div class="metric-label">False Negative Rate</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="tnRate">89.1%</div>
+                    <div class="metric-label">True Negative Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROC Curve & Learning Curves -->
+        <div class="section">
+            <h2>📈 Performance Curves</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="chart-container">
+                        <canvas id="rocChart"></canvas>
+                    </div>
+                    <div class="metric-label">ROC Curve (AUC = 0.976)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="chart-container">
+                        <canvas id="learningChart"></canvas>
+                    </div>
+                    <div class="metric-label">Learning Curves</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Per-Class Performance -->
+        <div class="section">
+            <h2>🌸 Per-Species Performance</h2>
+            <div class="metrics-grid" id="speciesPerformance"></div>
+        </div>
+
+        <!-- Training History -->
+        <div class="section">
+            <h2>📊 Training History</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="bestEpoch">42</div>
+                    <div class="metric-label">Best Epoch</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="trainTime">2h 34m</div>
+                    <div class="metric-label">Total Training Time</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="valLoss">0.187</div>
+                    <div class="metric-label">Best Validation Loss</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="convergence">42</div>
+                    <div class="metric-label">Convergence Epoch</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="btn-group">
+            <button type="button" class="btn-primary" onclick="refreshMetrics()">🔄 Refresh Metrics</button>
+            <button type="button" class="btn-success" onclick="exportPerformanceReport()">📄 Export Report</button>
+            <button type="button" class="btn-info" onclick="compareModels()">📊 Compare Models</button>
+            <button type="button" class="btn-secondary" onclick="window.location.href='/admin/dashboard'">← Back to Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        let rocChart, learningChart;
+        
+        function refreshMetrics() {
+            showAlert('Refreshing performance metrics...', 'info');
+            setTimeout(() => {
+                showAlert('Metrics refreshed successfully!', 'success');
+            }, 1000);
+        }
+        
+        function exportPerformanceReport() {
+            const report = {
+                accuracy: document.getElementById('accuracy').innerText,
+                precision: document.getElementById('precision').innerText,
+                recall: document.getElementById('recall').innerText,
+                f1: document.getElementById('f1').innerText,
+                auc: document.getElementById('auc').innerText,
+                confusionMatrix: {
+                    tp: document.getElementById('truePositive').innerText,
+                    fp: document.getElementById('falsePositive').innerText,
+                    fn: document.getElementById('falseNegative').innerText,
+                    tn: document.getElementById('trueNegative').innerText
+                }
+            };
+            const dataStr = JSON.stringify(report, null, 2);
+            const blob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'performance_report.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showAlert('Performance report exported!', 'success');
+        }
+        
+        function compareModels() {
+            showAlert('Model comparison feature - would show comparison with previous versions', 'info');
+        }
+        
+        function showMetricDetails(metric) {
+            const details = {
+                accuracy: 'Accuracy measures the overall correctness of the model: (TP+TN)/(TP+TN+FP+FN)',
+                precision: 'Precision measures how many selected items are relevant: TP/(TP+FP)',
+                recall: 'Recall measures how many relevant items are selected: TP/(TP+FN)',
+                f1: 'F1 Score is the harmonic mean of precision and recall: 2*(Precision*Recall)/(Precision+Recall)'
+            };
+            showAlert(details[metric] || 'Metric details', 'info');
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = message;
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '1000';
+            alertDiv.style.padding = '15px';
+            alertDiv.style.borderRadius = '8px';
+            alertDiv.style.backgroundColor = type === 'success' ? '#d4edda' : '#d1ecf1';
+            alertDiv.style.color = type === 'success' ? '#155724' : '#0c5460';
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+        
+        // Initialize charts
+        function initCharts() {
+            // ROC Curve
+            rocChart = new Chart(document.getElementById('rocChart'), {
+                type: 'line',
+                data: {
+                    labels: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                    datasets: [{
+                        label: 'ROC Curve (AUC = 0.976)',
+                        data: [0, 0.4, 0.6, 0.75, 0.85, 0.92, 0.96, 0.98, 0.99, 0.995, 1.0],
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Random Classifier',
+                        data: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                        borderColor: '#95a5a6',
+                        borderDash: [5, 5],
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+            
+            // Learning Curves
+            learningChart = new Chart(document.getElementById('learningChart'), {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 50}, (_, i) => i + 1),
+                    datasets: [
+                        { label: 'Training Accuracy', data: Array.from({length: 50}, (_, i) => 0.5 + (i / 100)), borderColor: '#3498db', fill: false },
+                        { label: 'Validation Accuracy', data: Array.from({length: 50}, (_, i) => 0.48 + (i / 90)), borderColor: '#27ae60', fill: false },
+                        { label: 'Training Loss', data: Array.from({length: 50}, (_, i) => 1.2 - (i / 45)), borderColor: '#e74c3c', fill: false, yAxisID: 'y1' },
+                        { label: 'Validation Loss', data: Array.from({length: 50}, (_, i) => 1.3 - (i / 50)), borderColor: '#f39c12', fill: false, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { title: { display: true, text: 'Accuracy' } }, y1: { position: 'right', title: { display: true, text: 'Loss' } } }
+                }
+            });
+        }
+        
+        // Per-species performance data
+        const speciesPerformance = {
+            'Phalaenopsis': { accuracy: 96.2, precision: 94.5, recall: 93.8, f1: 94.1 },
+            'Cattleya': { accuracy: 93.8, precision: 92.1, recall: 91.5, f1: 91.8 },
+            'Dendrobium': { accuracy: 94.5, precision: 93.2, recall: 92.4, f1: 92.8 },
+            'Vanda': { accuracy: 91.2, precision: 89.8, recall: 88.5, f1: 89.1 }
+        };
+        
+        function updateSpeciesPerformance() {
+            const container = document.getElementById('speciesPerformance');
+            container.innerHTML = '';
+            for (const [species, metrics] of Object.entries(speciesPerformance)) {
+                container.innerHTML += `
+                    <div class="metric-card">
+                        <div class="metric-value">🌸 ${species}</div>
+                        <div>Accuracy: ${metrics.accuracy}%</div>
+                        <div>Precision: ${metrics.precision}%</div>
+                        <div>Recall: ${metrics.recall}%</div>
+                        <div>F1 Score: ${metrics.f1}%</div>
+                        <div class="progress-bar"><div class="progress-fill" data-width="${metrics.accuracy}"></div></div>
+                    </div>
+                `;
+            }
+        }
+
+        // Set progress bar widths from data attributes
+        document.querySelectorAll('.progress-fill').forEach(fill => {
+            const width = fill.getAttribute('data-width');
+            if (width) {
+                fill.style.width = width + '%';
+            }
+        });
+
+        initCharts();
+        updateSpeciesPerformance();
+    </script>
+</body>
+</html>

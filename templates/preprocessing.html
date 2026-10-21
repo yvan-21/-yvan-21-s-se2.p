@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preprocessing - Orchid Identifier</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: white; border-radius: 15px; padding: 30px; margin-bottom: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .header h1 { color: #2c3e50; font-size: 2.5em; margin-bottom: 10px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; border-radius: 15px; padding: 25px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: transform 0.3s; cursor: pointer; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-number { font-size: 36px; font-weight: bold; color: #667eea; }
+        .section { background: white; border-radius: 15px; padding: 25px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .section h2 { color: #2c3e50; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #667eea; }
+        .preprocess-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .preprocess-card { background: #f8f9fa; border-radius: 10px; padding: 20px; border-left: 4px solid #667eea; transition: all 0.3s; }
+        .preprocess-card:hover { transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .preprocess-title { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .slider { width: 100%; height: 6px; border-radius: 3px; background: #e9ecef; outline: none; -webkit-appearance: none; appearance: none; margin: 10px 0; }
+        .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #667eea; cursor: pointer; }
+        .apply-btn { background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-top: 10px; width: 100%; transition: all 0.3s; }
+        .apply-btn:hover { background: #5a67d8; transform: scale(1.02); }
+        .step-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-top: 20px; }
+        .step-card { background: #f8f9fa; border-radius: 10px; padding: 14px; border: 1px solid #e1e5eb; }
+        .step-card h3 { color: #2c3e50; font-size: 16px; margin-bottom: 8px; }
+        .step-card p { color: #5d6875; font-size: 13px; min-height: 38px; }
+        .step-image { width: 100%; aspect-ratio: 1; object-fit: contain; background: #e9ecef; border: 1px solid #d9dee5; border-radius: 7px; margin: 10px 0; }
+        .step-meta { color: #495057; font: 12px/1.5 Consolas, monospace; overflow-wrap: anywhere; }
+        .pipeline-note { background: #eef2ff; border-left: 4px solid #667eea; padding: 14px; border-radius: 6px; color: #344054; }
+        .btn-group { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px; }
+        .btn-primary { background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+        .btn-success { background: #27ae60; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-secondary { background: #95a5a6; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; }
+        button:hover { transform: translateY(-2px); opacity: 0.9; }
+        .preview-placeholder { color: #999; }
+        .success-text { color: #27ae60; }
+        @media (max-width: 768px) { .preprocess-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Image Preprocessing Pipeline</h1>
+            <p>Upload one image to see every preprocessing and augmentation output used for model training.</p>
+        </div>
+
+        <div class="section">
+            <h2>🔧 What the training pipeline does</h2>
+            <ol>
+                <li>Load an image and apply the same green HSV mask used by <code>train_model.py</code>.</li>
+                <li>Resize the result to 224 × 224 pixels.</li>
+                <li>Convert pixel values from 0–255 to float values in the 0–1 range.</li>
+                <li>During training only, generate random rotation, shifts, horizontal flips, zoom, and brightness variants.</li>
+                <li>Pass the images through the CNN for species and plant-health classification.</li>
+            </ol>
+        </div>
+
+        <div class="section"><h2>🖼️ Step-by-step image output</h2>
+            <p>Choose a leaf image, then run the pipeline. Every tile below shows the actual output for that image. Augmentation tiles are separate examples generated from the normalized image, just like random variations used during training.</p>
+            <p id="imageStatus" class="pipeline-note" style="margin-top: 14px;">Select an image to begin. Nothing is changed until you run the steps.</p>
+            <div class="step-grid" id="stepPreviews"></div>
+            <div id="previewPlaceholder" class="preview-placeholder" style="margin-top: 16px;">Your step-by-step image previews will appear here.</div>
+            <div class="btn-group">
+                <button type="button" class="btn-primary" onclick="selectImage()">📷 Select Image</button>
+                <button type="button" class="btn-success" onclick="runPreprocessing()">▶ Run Step-by-step Preprocessing</button>
+                <button type="button" class="btn-secondary" onclick="resetPreview()">🔄 Reset</button>
+            </div>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        </div>
+        <div class="btn-group"><button type="button" class="btn-secondary" onclick="window.location.href='/admin/dashboard'">← Back</button></div>
+    </div>
+
+    <script>
+        let selectedImage = null;
+
+        function selectImage() { document.getElementById('imageInput').click(); }
+
+        function runPreprocessing() {
+            if (!selectedImage) {
+                setStatus('Select an image first.', true);
+                return;
+            }
+
+            const img = new Image();
+            img.onload = function() {
+                const source = document.createElement('canvas');
+                source.width = img.naturalWidth;
+                source.height = img.naturalHeight;
+                const sourceContext = source.getContext('2d', { willReadFrequently: true });
+                sourceContext.drawImage(img, 0, 0);
+
+                const sourceData = sourceContext.getImageData(0, 0, source.width, source.height);
+                const pixels = sourceData.data;
+                let maskedPixels = 0;
+                for (let i = 0; i < pixels.length; i += 4) {
+                    const [hue, saturation, value] = rgbToHsv(pixels[i], pixels[i + 1], pixels[i + 2]);
+                    if (hue < 70 || hue > 170 || saturation < 40 / 255 || value < 40 / 255) {
+                        pixels[i] = 0;
+                        pixels[i + 1] = 0;
+                        pixels[i + 2] = 0;
+                        maskedPixels++;
+                    }
+                }
+                sourceContext.putImageData(sourceData, 0, 0);
+
+                const resized = document.createElement('canvas');
+                resized.width = 224;
+                resized.height = 224;
+                resized.getContext('2d').drawImage(source, 0, 0, 224, 224);
+
+                const imageData = resized.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, 224, 224);
+                let minimum = 255;
+                let maximum = 0;
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    for (let channel = 0; channel < 3; channel++) {
+                        minimum = Math.min(minimum, imageData.data[i + channel]);
+                        maximum = Math.max(maximum, imageData.data[i + channel]);
+                    }
+                }
+
+                const rotation = randomBetween(8, 20) * (Math.random() < 0.5 ? -1 : 1);
+                const zoom = Math.random() < 0.5 ? randomBetween(0.8, 0.9) : randomBetween(1.1, 1.2);
+                const shiftX = Math.round(randomBetween(0.1, 0.2) * 224) * (Math.random() < 0.5 ? -1 : 1);
+                const shiftY = Math.round(randomBetween(0.1, 0.2) * 224) * (Math.random() < 0.5 ? -1 : 1);
+                const brightness = Math.random() < 0.5 ? randomBetween(0.8, 0.9) : randomBetween(1.1, 1.2);
+                const flipped = makeCanvas(224, 224);
+                const flippedContext = flipped.getContext('2d');
+                flippedContext.translate(224, 0);
+                flippedContext.scale(-1, 1);
+                flippedContext.drawImage(resized, 0, 0);
+
+                const rotated = makeCanvas(224, 224);
+                const rotatedContext = rotated.getContext('2d');
+                rotatedContext.fillStyle = '#000';
+                rotatedContext.fillRect(0, 0, 224, 224);
+                rotatedContext.translate(112, 112);
+                rotatedContext.rotate(rotation * Math.PI / 180);
+                rotatedContext.drawImage(resized, -112, -112);
+
+                const zoomed = makeCanvas(224, 224);
+                const zoomedContext = zoomed.getContext('2d');
+                zoomedContext.fillStyle = '#000';
+                zoomedContext.fillRect(0, 0, 224, 224);
+                const zoomSize = 224 * zoom;
+                zoomedContext.drawImage(resized, (224 - zoomSize) / 2, (224 - zoomSize) / 2, zoomSize, zoomSize);
+
+                const shifted = makeCanvas(224, 224);
+                const shiftedContext = shifted.getContext('2d');
+                shiftedContext.fillStyle = '#000';
+                shiftedContext.fillRect(0, 0, 224, 224);
+                shiftedContext.drawImage(resized, shiftX, shiftY);
+
+                const brightened = makeCanvas(224, 224);
+                const brightenedContext = brightened.getContext('2d');
+                brightenedContext.filter = `brightness(${brightness})`;
+                brightenedContext.drawImage(resized, 0, 0);
+
+                const normalized = resized.toDataURL('image/png');
+                const steps = [
+                    ['1. Original', 'The uploaded image before preprocessing.', selectedImage, `${img.naturalWidth} × ${img.naturalHeight} px`],
+                    ['2. Background mask', 'Green HSV pixels are retained, matching the training script.', source.toDataURL('image/png'), `${maskedPixels.toLocaleString()} pixels masked to black`],
+                    ['3. Resize', 'Resized to the model input shape.', normalized, '224 × 224 × 3 pixels'],
+                    ['4. Normalize', 'Pixel values are divided by 255. Display is rescaled for viewing.', normalized, `float32 range: ${(minimum / 255).toFixed(3)}–${(maximum / 255).toFixed(3)} (observed)`],
+                    ['5. Random rotation', 'One independent training-style augmentation example.', rotated.toDataURL('image/png'), `${rotation.toFixed(1)}°; training range: −20° to +20°`],
+                    ['6. Horizontal flip', 'Mirrors the normalized image left-to-right.', flipped.toDataURL('image/png'), 'horizontal_flip = true'],
+                    ['7. Random zoom', 'One independent zoom example.', zoomed.toDataURL('image/png'), `${zoom.toFixed(2)}×; training range: 0.8×–1.2×`],
+                    ['8. Random shift', 'One independent width/height shift example.', shifted.toDataURL('image/png'), `x: ${shiftX}px, y: ${shiftY}px; max: ±20%`],
+                    ['9. Brightness', 'One independent brightness example.', brightened.toDataURL('image/png'), `${brightness.toFixed(2)}×; training range: 0.8–1.2`]
+                ];
+                document.getElementById('stepPreviews').innerHTML = steps.map(([title, description, src, meta]) =>
+                    `<article class="step-card"><h3>${title}</h3><p>${description}</p><img class="step-image" src="${src}" alt="${title} output"><div class="step-meta">${meta}</div></article>`
+                ).join('');
+                document.getElementById('previewPlaceholder').style.display = 'none';
+                setStatus('Done. Augmentation images are separate examples based on the normalized image; the training generator draws random values for each training batch.');
+            };
+            img.onerror = function() {
+                setStatus('The selected file could not be decoded as an image.', true);
+            };
+            img.src = selectedImage;
+        }
+
+        function rgbToHsv(red, green, blue) {
+            const r = red / 255;
+            const g = green / 255;
+            const b = blue / 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            const delta = max - min;
+            let hue = 0;
+            if (delta !== 0) {
+                if (max === r) hue = 60 * (((g - b) / delta) % 6);
+                else if (max === g) hue = 60 * ((b - r) / delta + 2);
+                else hue = 60 * ((r - g) / delta + 4);
+            }
+            if (hue < 0) hue += 360;
+            return [hue, max === 0 ? 0 : delta / max, max];
+        }
+
+        function makeCanvas(width, height) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            return canvas;
+        }
+
+        function randomBetween(minimum, maximum) {
+            return minimum + Math.random() * (maximum - minimum);
+        }
+
+        function setStatus(message, isError = false) {
+            const status = document.getElementById('imageStatus');
+            status.textContent = message;
+            status.style.borderLeftColor = isError ? '#dc3545' : '#667eea';
+        }
+
+        function resetPreview() {
+            document.getElementById('stepPreviews').innerHTML = '';
+            document.getElementById('previewPlaceholder').style.display = 'block';
+            document.getElementById('previewPlaceholder').textContent = 'Your step-by-step image previews will appear here.';
+            document.getElementById('imageStatus').textContent = 'Select an image to begin. Nothing is changed until you run the steps.';
+            selectedImage = null;
+            document.getElementById('imageInput').value = '';
+        }
+
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    selectedImage = event.target.result;
+                    document.getElementById('stepPreviews').innerHTML = '';
+                    document.getElementById('previewPlaceholder').style.display = 'block';
+                    document.getElementById('previewPlaceholder').textContent = 'Image loaded. Click “Run Step-by-step Preprocessing” to see each output.';
+                    setStatus(`${file.name} selected (${(file.size / 1024).toFixed(1)} KB).`);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+    </script>
+</body>
+</html>

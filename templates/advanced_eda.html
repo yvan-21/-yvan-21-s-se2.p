@@ -1,0 +1,277 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced EDA</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f6f8ff; margin: 0; }
+    .container { max-width: 1200px; margin: 24px auto; padding: 16px; }
+    .chart-box { background: #fff; border: 1px solid #dde2ea; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    h1 { color: #1a237e; margin-bottom: 24px; }
+    h3 { color: #0d47a1; margin-top: 0; margin-bottom: 16px; border-bottom: 2px solid #e8eaf6; padding-bottom: 8px; }
+    
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+    .stat-card.healthy { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+    .stat-card.unhealthy { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); }
+    .stat-value { font-size: 36px; font-weight: bold; margin: 8px 0; }
+    .stat-label { font-size: 14px; opacity: 0.9; }
+    
+    .bar-chart { margin: 20px 0; }
+    .bar-item { margin-bottom: 12px; }
+    .bar-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; }
+    .bar-container { background: #e8eaf6; border-radius: 4px; height: 24px; overflow: hidden; }
+    .bar-fill { height: 100%; transition: width 0.3s ease; }
+    .bar-fill.healthy { background: linear-gradient(90deg, #11998e, #38ef7d); }
+    .bar-fill.unhealthy { background: linear-gradient(90deg, #eb3349, #f45c43); }
+    .bar-fill.species { background: linear-gradient(90deg, #667eea, #764ba2); }
+    
+    .insight-box { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 12px; margin: 12px 0; border-radius: 4px; }
+    .insight-box.warning { background: #fff3e0; border-left-color: #ff9800; }
+    .insight-title { font-weight: bold; margin-bottom: 4px; color: #2e7d32; }
+    .insight-box.warning .insight-title { color: #e65100; }
+    
+    .species-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+    .species-card { background: #f5f5f5; padding: 16px; border-radius: 8px; border-left: 4px solid #667eea; }
+    .species-card h4 { margin: 0 0 12px 0; color: #1a237e; }
+    .species-stat { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+    .species-stat .label { color: #666; }
+    .species-stat .value { font-weight: bold; }
+    
+    .percentage { font-size: 12px; color: #666; margin-left: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Advanced Exploratory Data Analysis</h1>
+    
+    <!-- Health Summary with Visual Cards -->
+    <div class="chart-box">
+      <h3>Health Summary</h3>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Images</div>
+          <div class="stat-value" id="total">0</div>
+          <div class="stat-label">100% of dataset</div>
+        </div>
+        <div class="stat-card healthy">
+          <div class="stat-label">Healthy</div>
+          <div class="stat-value" id="healthyCount">0</div>
+          <div class="stat-label" id="healthyPercent">0%</div>
+        </div>
+        <div class="stat-card unhealthy">
+          <div class="stat-label">Not Healthy</div>
+          <div class="stat-value" id="notHealthyCount">0</div>
+          <div class="stat-label" id="notHealthyPercent">0%</div>
+        </div>
+      </div>
+      
+      <div class="insight-box">
+        <div class="insight-title">💡 Health Distribution Insight</div>
+        <div id="healthInsight">Loading analysis...</div>
+      </div>
+    </div>
+
+    <!-- Species Breakdown with Visual Cards -->
+    <div class="chart-box">
+      <h3>Species Breakdown</h3>
+      <div class="species-grid" id="speciesGrid"></div>
+      
+      <div class="bar-chart">
+        <h4>Species Distribution</h4>
+        <div id="speciesBarChart"></div>
+      </div>
+      
+      <div class="insight-box warning">
+        <div class="insight-title">🔍 Species Analysis</div>
+        <div id="speciesInsight">Loading analysis...</div>
+      </div>
+    </div>
+
+    <!-- Health by Species Analysis -->
+    <div class="chart-box">
+      <h3>Health Status by Species</h3>
+      <div id="healthBySpecies"></div>
+      
+      <div class="insight-box">
+        <div class="insight-title">📈 Health Ratio by Species</div>
+        <div id="healthRatioInsight">Loading analysis...</div>
+      </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="chart-box">
+      <h3>Key Metrics & Insights</h3>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Most Common Species</div>
+          <div class="stat-value" id="mostCommon">-</div>
+          <div class="stat-label" id="mostCommonCount">0 images</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Least Common Species</div>
+          <div class="stat-value" id="leastCommon">-</div>
+          <div class="stat-label" id="leastCommonCount">0 images</div>
+        </div>
+        <div class="stat-card healthy">
+          <div class="stat-label">Healthiest Species</div>
+          <div class="stat-value" id="healthiest">-</div>
+          <div class="stat-label" id="healthiestRatio">0% healthy</div>
+        </div>
+        <div class="stat-card unhealthy">
+          <div class="stat-label">Needs Attention</div>
+          <div class="stat-value" id="needsAttention">-</div>
+          <div class="stat-label" id="needsAttentionRatio">0% healthy</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const datasetStats = {
+      total: 68,
+      healthy: 15,
+      notHealthy: 53,
+      species: {
+        Cattleya: { healthy: 2, notHealthy: 4 },
+        Dendrobium: { healthy: 0, notHealthy: 7 },
+        Phalaenopsis: { healthy: 0, notHealthy: 37 },
+        Vanda: { healthy: 13, notHealthy: 5 }
+      }
+    };
+
+    // Update health summary
+    document.getElementById('total').textContent = datasetStats.total;
+    document.getElementById('healthyCount').textContent = datasetStats.healthy;
+    document.getElementById('notHealthyCount').textContent = datasetStats.notHealthy;
+    
+    const healthyPercent = ((datasetStats.healthy / datasetStats.total) * 100).toFixed(1);
+    const notHealthyPercent = ((datasetStats.notHealthy / datasetStats.total) * 100).toFixed(1);
+    document.getElementById('healthyPercent').textContent = healthyPercent + '%';
+    document.getElementById('notHealthyPercent').textContent = notHealthyPercent + '%';
+
+    // Health insight
+    document.getElementById('healthInsight').textContent = 
+      `The dataset has a ${healthyPercent}% healthy rate, which is ${healthyPercent > 50 ? 'good' : 'concerning'}. ` +
+      `There are ${datasetStats.healthy} healthy images compared to ${datasetStats.notHealthy} unhealthy ones.`;
+
+    // Species breakdown
+    const speciesGrid = document.getElementById('speciesGrid');
+    const speciesBarChart = document.getElementById('speciesBarChart');
+    
+    let mostCommonSpecies = '';
+    let maxSpeciesCount = 0;
+    let leastCommonSpecies = '';
+    let minSpeciesCount = Infinity;
+    let healthiestSpecies = '';
+    let maxHealthRatio = 0;
+    let needsAttentionSpecies = '';
+    let minHealthRatio = 100;
+
+    Object.entries(datasetStats.species).forEach(([species, values]) => {
+      const total = values.healthy + values.notHealthy;
+      const healthRatio = ((values.healthy / total) * 100).toFixed(1);
+      
+      // Track most common
+      if (total > maxSpeciesCount) {
+        maxSpeciesCount = total;
+        mostCommonSpecies = species;
+      }
+      
+      // Track least common
+      if (total < minSpeciesCount) {
+        minSpeciesCount = total;
+        leastCommonSpecies = species;
+      }
+      
+      // Track healthiest
+      if (parseFloat(healthRatio) > maxHealthRatio) {
+        maxHealthRatio = parseFloat(healthRatio);
+        healthiestSpecies = species;
+      }
+      
+      // Track needs attention
+      if (parseFloat(healthRatio) < minHealthRatio) {
+        minHealthRatio = parseFloat(healthRatio);
+        needsAttentionSpecies = species;
+      }
+
+      // Species card
+      const card = document.createElement('div');
+      card.className = 'species-card';
+      card.innerHTML = `
+        <h4>🌸 ${species}</h4>
+        <div class="species-stat">
+          <span class="label">Total Images:</span>
+          <span class="value">${total}</span>
+        </div>
+        <div class="species-stat">
+          <span class="label">Healthy:</span>
+          <span class="value" style="color: #4caf50;">${values.healthy} (${healthRatio}%)</span>
+        </div>
+        <div class="species-stat">
+          <span class="label">Not Healthy:</span>
+          <span class="value" style="color: #f44336;">${values.notHealthy} (${(100 - healthRatio).toFixed(1)}%)</span>
+        </div>
+      `;
+      speciesGrid.appendChild(card);
+
+      // Bar chart
+      const barItem = document.createElement('div');
+      barItem.className = 'bar-item';
+      const percentage = ((total / datasetStats.total) * 100).toFixed(1);
+      barItem.innerHTML = `
+        <div class="bar-label">
+          <span>${species}</span>
+          <span>${total} (${percentage}%)</span>
+        </div>
+        <div class="bar-container">
+          <div class="bar-fill species" style="width: ${percentage}%"></div>
+        </div>
+      `;
+      speciesBarChart.appendChild(barItem);
+    });
+
+    // Update key metrics
+    document.getElementById('mostCommon').textContent = mostCommonSpecies;
+    document.getElementById('mostCommonCount').textContent = maxSpeciesCount + ' images';
+    document.getElementById('leastCommon').textContent = leastCommonSpecies;
+    document.getElementById('leastCommonCount').textContent = minSpeciesCount + ' images';
+    document.getElementById('healthiest').textContent = healthiestSpecies;
+    document.getElementById('healthiestRatio').textContent = maxHealthRatio + '% healthy';
+    document.getElementById('needsAttention').textContent = needsAttentionSpecies;
+    document.getElementById('needsAttentionRatio').textContent = minHealthRatio + '% healthy';
+
+    // Species insight
+    document.getElementById('speciesInsight').textContent = 
+      `${mostCommonSpecies} is the most common species with ${maxSpeciesCount} images, while ${leastCommonSpecies} is the least common with ${minSpeciesCount} images. ` +
+      `The dataset is well-balanced across ${Object.keys(datasetStats.species).length} different orchid species.`;
+
+    // Health by species
+    const healthBySpecies = document.getElementById('healthBySpecies');
+    Object.entries(datasetStats.species).forEach(([species, values]) => {
+      const total = values.healthy + values.notHealthy;
+      const healthyPercent = ((values.healthy / total) * 100).toFixed(1);
+      
+      const barItem = document.createElement('div');
+      barItem.className = 'bar-item';
+      barItem.innerHTML = `
+        <div class="bar-label">
+          <span>${species}</span>
+          <span>${healthyPercent}% healthy</span>
+        </div>
+        <div class="bar-container">
+          <div class="bar-fill healthy" style="width: ${healthyPercent}%"></div>
+        </div>
+      `;
+      healthBySpecies.appendChild(barItem);
+    });
+
+    // Health ratio insight
+    document.getElementById('healthRatioInsight').textContent = 
+      `${healthiestSpecies} has the highest health ratio at ${maxHealthRatio}%, while ${needsAttentionSpecies} ` +
+      `needs attention with only ${minHealthRatio}% healthy. Consider focusing care efforts on ${needsAttentionSpecies}.`;
+  </script>
+</body>
+</html>

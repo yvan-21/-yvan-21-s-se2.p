@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ app_name }} - Home</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 30px;
+            padding: 30px 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        h1 {
+            color: #2e7d32;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .menu-item {
+            background: #f5f5f5;
+            border-radius: 20px;
+            padding: 25px 15px;
+            text-decoration: none;
+            color: #333;
+            transition: transform 0.2s, background 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-item:active {
+            transform: scale(0.95);
+        }
+
+        .menu-icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+
+        .menu-text {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .admin-section {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .admin-link {
+            display: inline-block;
+            background: #1a237e;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .admin-link:active {
+            background: #0d47a1;
+        }
+
+        .footer {
+            color: #999;
+            font-size: 0.8rem;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 360px) {
+            .container {
+                padding: 25px 15px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .menu-grid {
+                gap: 12px;
+            }
+
+            .menu-item {
+                padding: 20px 12px;
+            }
+
+            .menu-icon {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌸 {{ app_name }}</h1>
+        <div class="subtitle">Identify orchids instantly with AI</div>
+
+        <div class="menu-grid">
+            <a href="/camera" class="menu-item">
+                <div class="menu-icon">📸</div>
+                <div class="menu-text">Take Photo</div>
+            </a>
+            <a href="/upload" class="menu-item">
+                <div class="menu-icon">📤</div>
+                <div class="menu-text">Upload</div>
+            </a>
+            <a href="/about" class="menu-item">
+                <div class="menu-icon">ℹ️</div>
+                <div class="menu-text">About</div>
+            </a>
+            <a href="/admin/dashboard" class="menu-item">
+                <div class="menu-icon">📊</div>
+                <div class="menu-text">Analytics</div>
+            </a>
+        </div>
+
+        <div class="admin-section">
+            <a href="/admin/dashboard" class="admin-link">📊 Admin Dashboard</a>
+        </div>
+
+        <div class="footer">
+            No login required • Free to use
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,515 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Processing Pipeline - Orchid Identifier</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: white; border-radius: 15px; padding: 30px; margin-bottom: 30px; text-align: center; }
+        .header h1 { color: #2c3e50; font-size: 2.5em; margin-bottom: 10px; }
+        .upload-section { background: white; border-radius: 15px; padding: 30px; margin-bottom: 30px; text-align: center; }
+        .upload-area { border: 2px dashed #667eea; border-radius: 10px; padding: 40px; margin: 20px 0; cursor: pointer; background: #f8f9fa; }
+        .upload-area:hover { border-color: #5a67d8; background: #e9ecef; }
+        .btn-upload { background: #667eea; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; margin-top: 15px; }
+        .processing-steps { display: flex; justify-content: space-between; margin: 30px 0; flex-wrap: wrap; gap: 10px; }
+        .step { flex: 1; text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; transition: all 0.3s; }
+        .step.active { background: #667eea; color: white; transform: scale(1.05); }
+        .step.completed { background: #27ae60; color: white; }
+        .step-number { width: 30px; height: 30px; background: white; color: #667eea; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; font-weight: bold; }
+        .image-display { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .image-card { background: white; border-radius: 15px; padding: 20px; text-align: center; }
+        .image-preview { width: 100%; height: 250px; background: #f8f9fa; border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 15px; border: 2px solid #e9ecef; }
+        .image-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .processing-visualization { background: white; border-radius: 15px; padding: 20px; margin-bottom: 30px; }
+        .visualization-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .vis-card { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; }
+        .vis-canvas { width: 100%; height: 180px; background: #e9ecef; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
+        canvas { max-width: 100%; max-height: 100%; }
+        .results-section { background: white; border-radius: 15px; padding: 25px; margin-bottom: 30px; }
+        .result-card { background: #f8f9fa; border-radius: 10px; padding: 20px; margin-top: 15px; }
+        .result-species { font-size: 28px; font-weight: bold; color: #667eea; }
+        .result-health { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin: 10px 0; }
+        .result-health.healthy { background: #d4edda; color: #155724; }
+        .result-health.not-healthy { background: #f8d7da; color: #721c24; }
+        .result-health.unknown { background: #fff3cd; color: #856404; }
+        .result-warning { margin: 12px 0; padding: 12px; border-left: 4px solid #d97706; border-radius: 8px; background: #fffbeb; color: #78350f; }
+        .result-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 15px 0; }
+        .metric { background: white; padding: 10px; border-radius: 8px; text-align: center; }
+        .metric-value { font-size: 20px; font-weight: bold; color: #667eea; }
+        .recommendation { white-space: pre-wrap; }
+        .progress-bar { width: 100%; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #27ae60; width: 0%; transition: width 0.5s; }
+        .btn-group { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px; justify-content: center; }
+        .btn-primary { background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-success { background: #27ae60; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-secondary { background: #95a5a6; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; }
+        .hidden { display: none; }
+        .file-input-hidden { display: none; }
+        .progress-text { text-align: center; margin-top: 8px; font-size: 12px; }
+        .preview-image-full { width: 100%; height: 100%; object-fit: cover; }
+        .explanation-text { background: #f8f9fa; padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 12px; border-left: 3px solid #667eea; text-align: left; }
+        .preprocessing-gallery { background: white; border-radius: 15px; padding: 25px; margin-bottom: 30px; }
+        .preprocessing-gallery h2 { color: #2c3e50; margin-bottom: 8px; }
+        .gallery-note { color: #64748b; line-height: 1.5; margin-bottom: 18px; }
+        .preprocessing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+        .preprocessing-card { min-width: 0; padding: 14px; background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 12px; }
+        .preprocessing-card h3 { color: #2c3e50; font-size: 15px; margin-bottom: 10px; }
+        .preprocessing-card img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; background: #e9ecef; border-radius: 8px; }
+        .preprocessing-card p { color: #64748b; font-size: 12px; line-height: 1.45; margin-top: 9px; }
+        .preprocessing-card .image-info { color: #475569; font-size: 11px; margin-top: 7px; }
+        .show-stage-btn { width: 100%; padding: 8px 10px; margin-top: 10px; color: white; background: #667eea; border: 0; border-radius: 6px; cursor: pointer; }
+        .show-stage-btn:hover { background: #5a67d8; }
+        .preprocessing-card .preview-placeholder { min-height: 160px; display: grid; place-items: center; color: #64748b; text-align: center; }
+        @media (max-width: 768px) { .processing-steps { flex-direction: column; } .image-display { grid-template-columns: 1fr; } .visualization-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 Image Processing Pipeline</h1>
+            <p>Explore each preprocessing step and training-only augmentation on your orchid image</p>
+        </div>
+
+        <div class="upload-section">
+            <h2>📤 Upload Image</h2>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📸</div>
+                <p>Click to select an image or drag and drop</p>
+                <input type="file" id="imageInput" accept="image/*" class="file-input-hidden">
+                <button type="button" class="btn-upload" onclick="document.getElementById('imageInput').click()">Select Image</button>
+            </div>
+        </div>
+
+        <div class="processing-steps" id="processingSteps">
+            <div class="step" id="step1"><div class="step-number">1</div><div class="step-title">Image Loading</div><div class="step-desc">Load and validate image</div></div>
+            <div class="step" id="step2"><div class="step-number">2</div><div class="step-title">Preprocessing</div><div class="step-desc">Resize &amp; normalize</div></div>
+            <div class="step" id="step3"><div class="step-number">3</div><div class="step-title">Visible Color Cues</div><div class="step-desc">Yellow and brown/dark areas</div></div>
+            <div class="step" id="step4"><div class="step-number">4</div><div class="step-title">Feature Extraction</div><div class="step-desc">Frozen MobileNetV2 features</div></div>
+            <div class="step" id="step5"><div class="step-number">5</div><div class="step-title">Classification</div><div class="step-desc">Species &amp; health prediction</div></div>
+        </div>
+
+        <div class="image-display hidden" id="imageDisplay">
+            <div class="image-card"><h3>🖼️ Original Image</h3><div class="image-preview" id="originalPreview"></div><div class="image-info" id="originalInfo">Dimensions: -- x --</div><div class="explanation-text"><strong>📌 Step 1: Image Loading</strong><br>Validates format and integrity</div></div>
+            <div class="image-card"><h3>⚙️ Processed Image</h3><div class="image-preview" id="processedPreview"></div><div class="image-info" id="processedInfo">Full-frame view resized to 224 × 224</div><div class="explanation-text"><strong>📌 Step 2: Preprocessing</strong><br>Species scoring averages the full photo with a centered square crop; health scoring uses the full photo.</div></div>
+        </div>
+
+        <section class="preprocessing-gallery hidden" id="preprocessingGallery" aria-live="polite">
+            <h2>Step-by-step data preprocessing</h2>
+            <p class="gallery-note">Species prediction averages a full-frame view and a centered square crop, which helps with non-square and wider photos. Health prediction uses the full-frame view. Each augmentation below is an independent training example and is not applied during prediction.</p>
+            <div class="preprocessing-grid">
+                <article class="preprocessing-card">
+                    <h3>1. Full-frame resized image</h3>
+                    <div id="resizedStagePreview" class="preview-placeholder">Select an image to begin</div>
+                    <p>Converted to RGB and resized to the model's fixed input size. This view preserves all scene content but can stretch non-square photos.</p>
+                    <div class="image-info" id="resizedStageInfo">Target: 224 × 224 px</div>
+                    <button type="button" class="show-stage-btn" onclick="showProcessedStage('resizedStagePreview', 'Resized: 224 × 224 pixels')">Show in main preview</button>
+                </article>
+                <article class="preprocessing-card">
+                    <h3>2. Centered square species view</h3>
+                    <div id="speciesCropStagePreview" class="preview-placeholder">Waiting for image</div>
+                    <p>A centered square crop is also classified; its species scores are averaged with the full-frame view.</p>
+                    <div class="image-info" id="speciesCropStageInfo">Target: 224 × 224 px</div>
+                    <button type="button" class="show-stage-btn" onclick="showProcessedStage('speciesCropStagePreview', 'Centered square species view: 224 × 224 pixels')">Show in main preview</button>
+                </article>
+                <article class="preprocessing-card">
+                    <h3>3. Normalized pixels</h3>
+                    <div id="normalizedStagePreview" class="preview-placeholder">Waiting for image</div>
+                    <p>Pixel values are divided by 255 to map RGB values from 0–255 into [0, 1]. The displayed colors look the same because the browser rescales them for viewing.</p>
+                    <div class="image-info" id="normalizedStageInfo">Range: --</div>
+                    <button type="button" class="show-stage-btn" onclick="showProcessedStage('normalizedStagePreview', 'Normalized pixel range: 0 to 1; appearance is unchanged')">Show in main preview</button>
+                </article>
+                <article class="preprocessing-card">
+                    <h3>4. Random rotation</h3>
+                    <div id="rotationStagePreview" class="preview-placeholder">Waiting for image</div>
+                    <p>Example rotation. Training randomly rotates images up to about ±36°.</p>
+                    <button type="button" class="show-stage-btn" onclick="showProcessedStage('rotationStagePreview', 'Example rotation: 25°')">Show in main preview</button>
+                </article>
+                <article class="preprocessing-card">
+                    <h3>5. Horizontal flip</h3>
+                    <div id="flipStagePreview" class="preview-placeholder">Waiting for image</div>
+                    <p>Mirrors the image left-to-right, matching the training augmentation.</p>
+                    <button type="button" class="show-stage-btn" onclick="showProcessedStage('flipStagePreview', 'Example horizontal flip')">Show in main preview</button>
+                </article>
+                <article class="preprocessing-card">
+                    <h3>6. Random zoom</h3>
+                    <div id="zoomStagePreview" class="preview-placeholder">Waiting for image</div>
+                    <p>Example zoom. Training randomly zooms in or out by up to 10%.</p>
+                    <button type="button" class="show-stage-btn" onclick="showProcessedStage('zoomStagePreview', 'Example zoom: 10%')">Show in main preview</button>
+                </article>
+                <article class="preprocessing-card">
+                    <h3>7. Brightness adjustment</h3>
+                    <div id="brightnessStagePreview" class="preview-placeholder">Waiting for image</div>
+                    <p>Example brighter image. Training randomly adjusts brightness by up to 15%.</p>
+                    <button type="button" class="show-stage-btn" onclick="showProcessedStage('brightnessStagePreview', 'Example brightness adjustment: +15%')">Show in main preview</button>
+                </article>
+                <article class="preprocessing-card">
+                    <h3>Optional background-removal preview</h3>
+                    <div id="backgroundStagePreview" class="preview-placeholder">Upload an image to create this preview</div>
+                    <p>Foreground-isolation view for visual inspection. The classifier is trained and predicts from the original image, not this preview.</p>
+                    <div class="image-info" id="backgroundStageInfo">Not part of training augmentation</div>
+                    <button type="button" class="show-stage-btn" onclick="showProcessedStage('backgroundStagePreview', 'Background-removal preview')">Show in main preview</button>
+                </article>
+            </div>
+        </section>
+
+        <div class="processing-visualization hidden" id="processingVis">
+            <h3>📊 Processing Visualization</h3>
+            <div class="visualization-grid">
+                <div class="vis-card"><div class="vis-canvas"><canvas id="rgbCanvas" width="250" height="180"></canvas></div><div class="vis-title">RGB Channel Averages</div><div class="explanation-text"><strong>Step 3:</strong> Color averages describe the photo; they are not a health test.</div></div>
+                <div class="vis-card"><div class="vis-canvas"><canvas id="colorIndexCanvas" width="250" height="180"></canvas></div><div class="vis-title">Visible Color Cue Coverage</div><div class="explanation-text"><strong>Screening only:</strong> estimated yellow-toned and brown/dark pixel coverage; lighting and natural leaf color affect it.</div></div>
+                <div class="vis-card"><div class="vis-canvas"><canvas id="featureCanvas" width="250" height="180"></canvas></div><div class="vis-title">Classifier Pipeline</div><div class="explanation-text"><strong>Step 4:</strong> MobileNetV2 image features feed species and healthy/unhealthy classifiers; no disease labels are available.</div></div>
+            </div>
+        </div>
+
+        <div class="results-section hidden" id="resultsSection">
+            <h2>📊 Analysis Result</h2>
+            <div class="result-card">
+                <div class="result-species" id="resultSpecies">--</div>
+                <div class="result-health" id="resultHealth">--</div>
+                <div class="result-warning" id="resultWarning" role="status" hidden></div>
+                <div class="result-metrics">
+                    <div class="metric"><div class="metric-value" id="colorIndex">--</div><div class="metric-label">Yellow-toned area</div></div>
+                    <div class="metric"><div class="metric-value" id="greenValue">--</div><div class="metric-label">Brown/dark area</div></div>
+                </div>
+                <div class="recommendation"><strong>🔎 Visual Screening &amp; Care Guidance:</strong><br><span id="recommendationText">Waiting for image analysis...</span></div>
+                <div class="explanation-text"><strong>📌 Step 5: Classification</strong><br>Reports species and healthy/unhealthy patterns. It does not identify a specific disease.</div>
+            </div>
+        </div>
+
+        <div class="progress-container hidden" id="progressContainer">
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div id="progressText" class="progress-text">Processing...</div>
+        </div>
+
+        <div class="btn-group hidden" id="actionButtons">
+            <button type="button" class="btn-primary" onclick="analyzeNewImage()">🔄 Analyze Another Image</button>
+            <button type="button" class="btn-success" onclick="window.location.href='/admin/dashboard'">📊 Admin Dashboard</button>
+            <button type="button" class="btn-secondary" onclick="window.location.href='/dataset'">📁 View Dataset</button>
+        </div>
+    </div>
+
+    <script>
+        let currentImage = null;
+        let currentFile = null;
+        const uploadArea = document.getElementById('uploadArea');
+        const imageInput = document.getElementById('imageInput');
+        uploadArea.addEventListener('click', () => imageInput.click());
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+        uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('drag-over'); });
+        uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.classList.remove('drag-over'); const file = e.dataTransfer.files[0]; if(file && file.type.startsWith('image/')) processImage(file); });
+        imageInput.addEventListener('change', (e) => { if(e.target.files && e.target.files[0]) processImage(e.target.files[0]); });
+        
+        function processImage(file) { currentFile = file; const reader = new FileReader(); reader.onload = function(e) { currentImage = e.target.result; startProcessing(); }; reader.readAsDataURL(file); }
+        
+        function startProcessing() {
+            const analysisPromise = submitImageForAnalysis(currentFile).catch(error => ({
+                success: false,
+                error: error.message || 'Image analysis failed.'
+            }));
+            loadBackgroundRemovalPreview(currentFile);
+            document.getElementById('imageDisplay').classList.remove('hidden');
+            document.getElementById('preprocessingGallery').classList.remove('hidden');
+            document.getElementById('processingVis').classList.remove('hidden');
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('progressContainer').classList.remove('hidden');
+            document.getElementById('actionButtons').classList.remove('hidden');
+            for(let i=1;i<=5;i++){ const step=document.getElementById(`step${i}`); step.classList.remove('active','completed'); step.classList.add('active'); }
+            document.getElementById('originalPreview').innerHTML = `<img src="${currentImage}" alt="Original">`;
+            const img = new Image(); img.onload = function(){ document.getElementById('originalInfo').innerHTML = `Dimensions: ${img.width} x ${img.height}`; }; img.src = currentImage;
+            let currentStep=0;
+            const steps = [{time:600,name:'Loading Image...',desc:'Validating format'},{time:1000,name:'Preprocessing...',desc:'Resizing to 224×224 and normalizing pixels'},{time:1200,name:'Visible Color Cues...',desc:'Estimating yellow and brown/dark coverage'},{time:1000,name:'Feature Extraction...',desc:'Preparing frozen MobileNetV2 features'},{time:800,name:'Classification...',desc:'Running species and health screening'}];
+            function processStep(){
+                if(currentStep>=steps.length){ analysisPromise.then(completeProcessing); return; }
+                const stepData=steps[currentStep]; const stepNumber=currentStep+1;
+                for(let i=1;i<=stepNumber;i++){ const stepEl=document.getElementById(`step${i}`); if(i<stepNumber){ stepEl.classList.remove('active'); stepEl.classList.add('completed'); } else { stepEl.classList.add('active'); } }
+                const progress=((currentStep+0.6)/steps.length)*100;
+                document.getElementById('progressFill').style.width=`${progress}%`;
+                document.getElementById('progressText').innerHTML=`${stepData.name} (${Math.round(progress)}%)<br><small>${stepData.desc}</small>`;
+                if(stepNumber===2){ drawResizedPreview(currentImage); }
+                else if(stepNumber===3){ drawRGBChart(currentImage); }
+                else if(stepNumber===4){ drawFeatureMap(); }
+                else if(stepNumber===5){ analysisPromise.then(displayAnalysisResult); }
+                currentStep++; setTimeout(processStep, stepData.time);
+            }
+            setTimeout(processStep, 400);
+        }
+
+        async function submitImageForAnalysis(file) {
+            if (!file) throw new Error('Choose an image before starting analysis.');
+            const formData = new FormData();
+            formData.append('image', file);
+            const response = await fetch('/api/analyze-upload', { method: 'POST', body: formData });
+            const responseText = await response.text();
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch {
+                throw new Error(
+                    response.status === 403
+                        ? 'The server blocked the analysis request. Open this page through the running Flask app, not as a local HTML file.'
+                        : `The analysis endpoint returned HTTP ${response.status} instead of JSON.`
+                );
+            }
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Image analysis failed.');
+            }
+            return result;
+        }
+
+        async function loadBackgroundRemovalPreview(file) {
+            const preview = document.getElementById('backgroundStagePreview');
+            const info = document.getElementById('backgroundStageInfo');
+            preview.textContent = 'Creating background-removal preview...';
+            info.textContent = 'Processing image on the Flask server...';
+
+            if (window.location.protocol === 'file:') {
+                preview.textContent = 'Preview unavailable: open the app through its Flask server.';
+                info.textContent = 'This page is opened as a local file, so the image-processing API cannot be reached.';
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                const response = await fetch('/api/preprocess/background-removal', {
+                    method: 'POST',
+                    body: formData
+                });
+                const responseText = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch {
+                    throw new Error(
+                        response.status === 403
+                            ? 'The server blocked the preview request. Confirm the Flask app is running and reload this page.'
+                            : `The preview endpoint returned HTTP ${response.status} instead of JSON.`
+                    );
+                }
+                if (!response.ok || !result.success || !result.preview_image) {
+                    throw new Error(result.error || 'The server did not return a background-removal preview.');
+                }
+                setStagePreview(
+                    'backgroundStagePreview',
+                    result.preview_image,
+                    'Background-removed preview used to inspect the foreground plant'
+                );
+                info.textContent = 'Foreground preview created independently of classification';
+            } catch (error) {
+                preview.textContent = `Preview unavailable: ${error.message}`;
+                info.textContent = 'Check the Flask server/API connection and retry with an image.';
+            }
+        }
+
+        function drawResizedPreview(imageUrl) {
+            const image = new Image();
+            image.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 224;
+                canvas.height = 224;
+                const context = canvas.getContext('2d', { willReadFrequently: true });
+                if (!context) {
+                    throw new Error('Could not create a canvas context for preprocessing previews.');
+                }
+                context.drawImage(image, 0, 0, 224, 224);
+                const pixels = context.getImageData(0, 0, 224, 224).data;
+                let minPixel = 255;
+                let maxPixel = 0;
+                for (let index = 0; index < pixels.length; index += 4) {
+                    minPixel = Math.min(minPixel, pixels[index], pixels[index + 1], pixels[index + 2]);
+                    maxPixel = Math.max(maxPixel, pixels[index], pixels[index + 1], pixels[index + 2]);
+                }
+                const resizedUrl = canvas.toDataURL('image/png');
+                setStagePreview('resizedStagePreview', resizedUrl, 'Image resized to 224 by 224 pixels');
+                setStagePreview('normalizedStagePreview', resizedUrl, 'RGB image with pixel values normalized to the range 0 to 1');
+                document.getElementById('resizedStageInfo').textContent = 'Shape: 224 × 224 × 3 (RGB)';
+                const cropCanvas = document.createElement('canvas');
+                cropCanvas.width = 224;
+                cropCanvas.height = 224;
+                const cropContext = cropCanvas.getContext('2d');
+                if (!cropContext) {
+                    throw new Error('Could not create a canvas context for the centered species crop.');
+                }
+                const cropSide = Math.min(image.naturalWidth, image.naturalHeight);
+                cropContext.drawImage(
+                    image,
+                    (image.naturalWidth - cropSide) / 2,
+                    (image.naturalHeight - cropSide) / 2,
+                    cropSide,
+                    cropSide,
+                    0,
+                    0,
+                    224,
+                    224
+                );
+                const cropUrl = cropCanvas.toDataURL('image/png');
+                setStagePreview(
+                    'speciesCropStagePreview',
+                    cropUrl,
+                    'Centered square crop used as the second species-classification view'
+                );
+                document.getElementById('speciesCropStageInfo').textContent =
+                    'Centered square crop: 224 × 224 × 3 (RGB)';
+                document.getElementById('normalizedStageInfo').textContent =
+                    `Normalized range: ${(minPixel / 255).toFixed(3)}–${(maxPixel / 255).toFixed(3)} (from ${minPixel}–${maxPixel})`;
+                drawAugmentationPreview(canvas, 'rotationStagePreview', context => {
+                    context.translate(112, 112);
+                    context.rotate(25 * Math.PI / 180);
+                    context.drawImage(canvas, -112, -112, 224, 224);
+                }, 'Example image rotated 25 degrees');
+                drawAugmentationPreview(canvas, 'flipStagePreview', context => {
+                    context.translate(224, 0);
+                    context.scale(-1, 1);
+                    context.drawImage(canvas, 0, 0, 224, 224);
+                }, 'Example image flipped horizontally');
+                drawAugmentationPreview(canvas, 'zoomStagePreview', context => {
+                    context.drawImage(canvas, -11, -11, 246, 246);
+                }, 'Example image zoomed in by 10 percent');
+                drawAugmentationPreview(canvas, 'brightnessStagePreview', context => {
+                    context.filter = 'brightness(1.15)';
+                    context.drawImage(canvas, 0, 0, 224, 224);
+                }, 'Example image brightened by 15 percent');
+                const preview = document.getElementById('processedPreview');
+                preview.innerHTML = '';
+                const output = new Image();
+                output.className = 'preview-image-full';
+                output.alt = 'Image resized to 224 by 224 pixels';
+                output.src = resizedUrl;
+                preview.appendChild(output);
+                document.getElementById('processedInfo').textContent = 'Full-frame view resized: 224 × 224 pixels';
+            };
+            image.src = imageUrl;
+        }
+
+        function setStagePreview(elementId, imageUrl, altText) {
+            const preview = document.getElementById(elementId);
+            const output = new Image();
+            output.alt = altText;
+            output.src = imageUrl;
+            preview.replaceChildren(output);
+        }
+
+        function showProcessedStage(elementId, description) {
+            const stageImage = document.getElementById(elementId).querySelector('img');
+            if (!stageImage) {
+                throw new Error('This preprocessing preview is not available yet.');
+            }
+            const preview = document.getElementById('processedPreview');
+            const output = new Image();
+            output.className = 'preview-image-full';
+            output.alt = description;
+            output.src = stageImage.src;
+            preview.replaceChildren(output);
+            document.getElementById('processedInfo').textContent = description;
+        }
+
+        function drawAugmentationPreview(sourceCanvas, elementId, transform, altText) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 224;
+            canvas.height = 224;
+            const context = canvas.getContext('2d');
+            if (!context) {
+                throw new Error('Could not create a canvas context for augmentation previews.');
+            }
+            transform(context);
+            setStagePreview(elementId, canvas.toDataURL('image/png'), altText);
+        }
+
+        function displayAnalysisResult(result) {
+            if (!result.success) {
+                document.getElementById('resultSpecies').textContent = 'Analysis failed';
+                document.getElementById('resultWarning').textContent = result.error || 'Please try another image.';
+                document.getElementById('resultWarning').hidden = false;
+                document.getElementById('resultHealth').textContent = 'UNAVAILABLE';
+                document.getElementById('resultHealth').className = 'result-health';
+                document.getElementById('recommendationText').textContent =
+                    'No screening result is available. Check that the image is valid and try again.';
+                return;
+            }
+            document.getElementById('resultSpecies').textContent = result.species || 'Unknown';
+
+            const healthElement = document.getElementById('resultHealth');
+            healthElement.textContent = result.health_status === 'healthy'
+                ? 'HEALTHY PATTERN'
+                : result.health_status === 'not_healthy'
+                    ? 'POSSIBLE UNHEALTHY PATTERN'
+                    : 'UNKNOWN / UNCERTAIN';
+            healthElement.className = `result-health ${result.health_status === 'healthy' ? 'healthy' : result.health_status === 'not_healthy' ? 'not-healthy' : 'unknown'}`;
+            const warning = document.getElementById('resultWarning');
+            warning.textContent = result.warning || '';
+            warning.hidden = !result.warning;
+
+            const observations = result.visible_symptoms || {};
+            document.getElementById('colorIndex').textContent =
+                Number.isFinite(observations.yellow_percent) ? `${observations.yellow_percent.toFixed(1)}%` : '--';
+            document.getElementById('greenValue').textContent =
+                Number.isFinite(observations.brown_dark_percent) ? `${observations.brown_dark_percent.toFixed(1)}%` : '--';
+
+            document.getElementById('recommendationText').textContent =
+                result.recommendation || 'No screening summary is available.';
+            drawSymptomChart(observations);
+        }
+
+        function drawSymptomChart(observations) {
+            const canvas = document.getElementById('colorIndexCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = '12px Arial';
+            const bars = [
+                ['Yellow-toned', Number(observations.yellow_percent) || 0, '#e0b52c'],
+                ['Brown/dark', Number(observations.brown_dark_percent) || 0, '#795548']
+            ];
+            bars.forEach((bar, index) => {
+                const y = 48 + index * 62;
+                ctx.fillText(`${bar[0]}: ${bar[1].toFixed(1)}%`, 10, y);
+                ctx.fillStyle = '#dfe3e8';
+                ctx.fillRect(10, y + 10, canvas.width - 20, 16);
+                ctx.fillStyle = bar[2];
+                ctx.fillRect(10, y + 10, (canvas.width - 20) * Math.min(bar[1] / 100, 1), 16);
+                ctx.fillStyle = '#2c3e50';
+            });
+        }
+        
+        function drawRGBChart(imageUrl){
+            const canvas=document.getElementById('rgbCanvas'); const ctx=canvas.getContext('2d');
+            const img=new Image(); img.onload=function(){
+                const tempCanvas=document.createElement('canvas'); const tempCtx=tempCanvas.getContext('2d');
+                tempCanvas.width=img.width; tempCanvas.height=img.height; tempCtx.drawImage(img,0,0);
+                const data=tempCtx.getImageData(0,0,img.width,img.height).data;
+                let rSum=0,gSum=0,bSum=0,count=0;
+                for(let i=0;i<data.length;i+=4){ rSum+=data[i]; gSum+=data[i+1]; bSum+=data[i+2]; count++; }
+                const rAvg=rSum/count, gAvg=gSum/count, bAvg=bSum/count;
+                window.rgbValues={r:rAvg,g:gAvg,b:bAvg};
+                const barWidth=canvas.width/4, maxValue=255;
+                ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#e9ecef'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.fillStyle='#e74c3c'; ctx.fillRect(barWidth,canvas.height-(rAvg/maxValue*canvas.height),barWidth-10,(rAvg/maxValue*canvas.height));
+                ctx.fillStyle='#27ae60'; ctx.fillRect(barWidth*2,canvas.height-(gAvg/maxValue*canvas.height),barWidth-10,(gAvg/maxValue*canvas.height));
+                ctx.fillStyle='#3498db'; ctx.fillRect(barWidth*3,canvas.height-(bAvg/maxValue*canvas.height),barWidth-10,(bAvg/maxValue*canvas.height));
+                ctx.fillStyle='#2c3e50'; ctx.font='bold 14px Arial'; ctx.fillText('R',barWidth+20,canvas.height-8); ctx.fillText('G',barWidth*2+20,canvas.height-8); ctx.fillText('B',barWidth*3+20,canvas.height-8);
+                ctx.font='10px Arial'; ctx.fillStyle='#7f8c8d'; ctx.fillText(Math.round(rAvg),barWidth+20,canvas.height-(rAvg/maxValue*canvas.height)-5);
+                ctx.fillText(Math.round(gAvg),barWidth*2+20,canvas.height-(gAvg/maxValue*canvas.height)-5); ctx.fillText(Math.round(bAvg),barWidth*3+20,canvas.height-(bAvg/maxValue*canvas.height)-5);
+            }; img.src=imageUrl;
+        }
+        
+        function drawFeatureMap(){
+            const canvas=document.getElementById('featureCanvas'); const ctx=canvas.getContext('2d');
+            const w=canvas.width,h=canvas.height;
+            ctx.clearRect(0,0,w,h);
+            ctx.fillStyle='#f8f9fa'; ctx.fillRect(0,0,w,h);
+            ctx.fillStyle='#2c3e50'; ctx.font='bold 12px Arial';
+            ctx.fillText('Original RGB image',10,38);
+            ctx.fillText('↓',w/2-4,58);
+            ctx.fillText('Frozen MobileNetV2',10,82);
+            ctx.fillText('↓',w/2-4,102);
+            ctx.fillText('Species + health classifiers',10,128);
+        }
+        
+        function completeProcessing(){ for(let i=1;i<=5;i++){ const step=document.getElementById(`step${i}`); step.classList.remove('active'); step.classList.add('completed'); } document.getElementById('progressFill').style.width='100%'; document.getElementById('progressText').innerHTML='✅ Processing Complete!'; }
+        function analyzeNewImage(){ location.reload(); }
+    </script>
+</body>
+</html>
