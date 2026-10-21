@@ -239,6 +239,12 @@
         </div>
         {% endif %}
 
+        {% if not admin_login_configured %}
+        <div class="info-message">
+            Admin login is not configured. Set ADMIN_PASSWORD in .env and restart the app.
+        </div>
+        {% endif %}
+
         <!-- Login Form -->
         <form id="login-form" method="POST" action="/login">
             <div class="form-group">

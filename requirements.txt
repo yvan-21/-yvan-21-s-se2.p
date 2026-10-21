@@ -6,6 +6,7 @@ numpy>=1.26,<3
 opencv-python-headless>=4.9,<6
 Pillow>=10,<13
 pyOpenSSL>=24,<27
+python-dotenv>=1.0,<2
 requests>=2.31,<3
 scikit-image>=0.22,<1
 scikit-learn>=1.4,<2

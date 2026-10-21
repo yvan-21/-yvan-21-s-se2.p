@@ -86,22 +86,23 @@ python -m venv .venv
 ```
 
 Training images and `datasets/image_groups.csv` are not included; supply them
-before training. Set a private session-signing key and admin password, and
-create a local development certificate before starting the app:
+before training. Create a local `.env` file from the example and edit it with
+your own session-signing key and admin password:
 
 ```powershell
-$env:FLASK_SECRET_KEY = (python -c "import secrets; print(secrets.token_hex(32))")
-$secureAdminPassword = Read-Host "Admin password" -AsSecureString
-$env:ADMIN_PASSWORD = [System.Net.NetworkCredential]::new("", $secureAdminPassword).Password
+Copy-Item .env.example .env
+notepad .env
 .\.venv\Scripts\python.exe .\generate_cert.py
 .\.venv\Scripts\python.exe .\app.py
 ```
 
-Keep the same `FLASK_SECRET_KEY` and `ADMIN_PASSWORD` values for later runs.
-The admin username defaults to `admin`; set `ADMIN_USERNAME` to change it.
-Admin login is disabled until `ADMIN_PASSWORD` is set. The certificate, key,
-accounts, and scan records are local files and are not included in the
-repository. On a fresh setup, create a user account through the sign-up form.
+Replace both placeholder values in `.env`; keep the same `FLASK_SECRET_KEY`
+and admin password for later runs. The admin username defaults to `admin`;
+set `ADMIN_USERNAME` to change it. Admin login is disabled until
+`ADMIN_PASSWORD` is set. Restart the app after changing `.env`. The file is
+ignored by Git; the certificate, key, accounts, and scan records are also local
+files and are not included in the repository. On a fresh setup, create a user
+account through the sign-up form.
 
 Open `https://localhost:5000` and accept the local development certificate
 warning. The app loads saved model artifacts at startup; it does not retrain

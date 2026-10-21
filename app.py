@@ -8,6 +8,7 @@ import functools
 import io
 import hashlib
 from datetime import datetime
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 import logging
@@ -26,6 +27,8 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 import mysql.connector
 from unknown_detection import ValidationCalibratedDetector
+
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 # Suppress TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -1988,6 +1991,14 @@ def login():
         logger.info(f"Login attempt for username: {username}")
         
         # Check admin credentials
+        if username == ADMIN_USERNAME and not ADMIN_PASSWORD:
+            return render_template(
+                "login.html",
+                app_name=APP_NAME,
+                error="Admin login is not configured. Set ADMIN_PASSWORD in .env and restart the app.",
+                admin_login_configured=False,
+            )
+
         if ADMIN_PASSWORD and username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["logged_in"] = True
             session["user_type"] = "admin"
@@ -2013,9 +2024,18 @@ def login():
         else:
             logger.info("Username not found in stored users")
         
-        return render_template("login.html", app_name=APP_NAME, error="Invalid username or password")
+        return render_template(
+            "login.html",
+            app_name=APP_NAME,
+            error="Invalid username or password",
+            admin_login_configured=bool(ADMIN_PASSWORD),
+        )
     
-    return render_template("login.html", app_name=APP_NAME)
+    return render_template(
+        "login.html",
+        app_name=APP_NAME,
+        admin_login_configured=bool(ADMIN_PASSWORD),
+    )
 
 @app.route("/logout")
 def logout():
@@ -2030,23 +2050,48 @@ def create_account():
     
     # Validate input
     if not username or not password or not confirm_password:
-        return render_template("login.html", app_name=APP_NAME, error="All fields are required")
+        return render_template(
+            "login.html",
+            app_name=APP_NAME,
+            error="All fields are required",
+            admin_login_configured=bool(ADMIN_PASSWORD),
+        )
     
     if password != confirm_password:
-        return render_template("login.html", app_name=APP_NAME, error="Passwords do not match")
+        return render_template(
+            "login.html",
+            app_name=APP_NAME,
+            error="Passwords do not match",
+            admin_login_configured=bool(ADMIN_PASSWORD),
+        )
     
     if len(password) < 6:
-        return render_template("login.html", app_name=APP_NAME, error="Password must be at least 6 characters")
+        return render_template(
+            "login.html",
+            app_name=APP_NAME,
+            error="Password must be at least 6 characters",
+            admin_login_configured=bool(ADMIN_PASSWORD),
+        )
     
     # Check if username already exists (for demo, just check against admin)
     if username == ADMIN_USERNAME:
-        return render_template("login.html", app_name=APP_NAME, error="Username already exists")
+        return render_template(
+            "login.html",
+            app_name=APP_NAME,
+            error="Username already exists",
+            admin_login_configured=bool(ADMIN_PASSWORD),
+        )
     
     users_file = os.path.join(BASE_DIR, "users.json")
     users = load_app_document("users", users_file, {})
     
     if username in users:
-        return render_template("login.html", app_name=APP_NAME, error="Username already exists")
+        return render_template(
+            "login.html",
+            app_name=APP_NAME,
+            error="Username already exists",
+            admin_login_configured=bool(ADMIN_PASSWORD),
+        )
     
     users[username] = {
         "password": password,
@@ -2056,7 +2101,12 @@ def create_account():
     
     logger.info(f"New account created: {username}")
     
-    return render_template("login.html", app_name=APP_NAME, success="Account created successfully! Please login.")
+    return render_template(
+        "login.html",
+        app_name=APP_NAME,
+        success="Account created successfully! Please login.",
+        admin_login_configured=bool(ADMIN_PASSWORD),
+    )
 
 @app.route("/home")
 def home():
